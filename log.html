@@ -15,20 +15,26 @@
   <a class="nav-link" href="analysis.html"><span class="nav-icon">💰</span> Cost Analysis</a>
 </nav>
 
-<main class="main">
+<main class="main log-main">
   <div class="page-title">Log a Session</div>
   <div class="page-sub" id="log-sub">Loading…</div>
 
-  <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:1.25rem;align-items:start">
+  <div class="log-wrap">
 
     <!-- Form -->
     <div class="card">
+      <div id="already-logged" style="display:none;padding:.75rem 1rem;border-radius:8px;background:#F1F5F9;font-size:.9rem;margin-bottom:1rem"></div>
       <form id="log-form">
         <div class="form-grid" style="margin-bottom:1.25rem">
 
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Reporter</label>
+            <input type="text" id="f-reporter" placeholder="Your name" required autofocus autocomplete="name">
+          </div>
+
           <div class="form-group">
             <label>Kids present</label>
-            <input type="number" id="f-kids" min="0" max="100" placeholder="0" required autofocus>
+            <input type="number" id="f-kids" min="0" max="100" placeholder="0" required>
           </div>
           <div class="form-group">
             <label>Coding Senseis working</label>
@@ -37,7 +43,7 @@
 
         </div>
 
-        <button type="submit" class="btn btn-primary" id="submit-btn">Save Session</button>
+        <button type="submit" class="btn btn-primary" id="submit-btn" style="width:100%">Save Session</button>
       </form>
     </div>
 
@@ -46,12 +52,16 @@
       <div class="card">
         <div class="card-title">Auto-detected context</div>
         <div style="display:flex;flex-direction:column;gap:.75rem;font-size:.875rem">
+          <div><span style="color:var(--muted);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Session time</span><br>
+            <span id="ctx-time">—</span></div>
           <div><span style="color:var(--muted);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em">School status</span><br>
             <span id="ctx-school">—</span></div>
           <div><span style="color:var(--muted);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Weather</span><br>
             <span id="ctx-weather">Loading…</span></div>
           <div><span style="color:var(--muted);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Precipitation forecast</span><br>
             <span id="ctx-precip">—</span></div>
+          <div><span style="color:var(--muted);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Traffic near CodeNinjas</span><br>
+            <span id="ctx-traffic">Loading…</span></div>
         </div>
       </div>
 
@@ -60,17 +70,7 @@
         <div id="ratio-body" style="font-size:.875rem;color:var(--muted)">Enter kids + senseis to see analysis.</div>
       </div>
     </div>
-  </div>
 
-  <!-- Previous logs for today -->
-  <div class="card" style="margin-top:1.25rem" id="prev-card">
-    <div class="card-title">Other entries for today</div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Slot</th><th>Kids</th><th>Senseis</th><th>Duration</th><th>Notes</th><th></th></tr></thead>
-        <tbody id="prev-tbody"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:1rem">—</td></tr></tbody>
-      </table>
-    </div>
   </div>
 </main>
 
@@ -80,15 +80,14 @@
 <script src="js/config.js"></script>
 <script src="js/db.js"></script>
 <script src="js/weather.js"></script>
+<script src="js/traffic.js"></script>
 <script src="js/calendar.js"></script>
 <script>
 const today = new Date().toISOString().slice(0, 10);
 
-function autoTimeSlot() {
-  const h = new Date().getHours();
-  if (h < 12) return 'morning';
-  if (h < 17) return 'afternoon';
-  return 'evening';
+function sessionTimeForDate(dateStr) {
+  const day = new Date(dateStr + 'T12:00:00').getDay();
+  return CONFIG.schedule[day] || null;
 }
 
 // ── Page subtitle ─────────────────────────────────────────────────────────────
@@ -96,9 +95,18 @@ document.getElementById('log-sub').textContent =
   new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
 // ── Context + previous entries ────────────────────────────────────────────────
-let _weather = {}, _cal = {};
+let _weather = {}, _cal = {}, _traffic = null;
 
 async function init() {
+  // Session time for today
+  const sessionTime = sessionTimeForDate(today);
+  const timeEl = document.getElementById('ctx-time');
+  if (sessionTime) {
+    timeEl.textContent = sessionTime;
+  } else {
+    timeEl.innerHTML = '<span style="color:var(--amber)">No session scheduled today</span>';
+  }
+
   const cal = SCHOOL_CALENDAR.getInfo(today);
   const typeMap = { school: 'school-day', holiday: 'no-school', break: 'no-school', summer: 'summer', weekend: 'weekend' };
   document.getElementById('ctx-school').innerHTML =
@@ -113,7 +121,35 @@ async function init() {
   _weather = w;
   _cal = cal;
 
-  loadPrevious();
+  // Traffic — prefer session-time snapshot (captured by GitHub Actions), fall back to real-time
+  const trafficEl = document.getElementById('ctx-traffic');
+  const snap = await getTrafficSnapshot(today);
+  if (snap) {
+    _traffic = { congestion: snap.congestion, currentSpeed: snap.current_speed, capturedAt: snap.captured_at };
+    trafficEl.textContent = `${trafficIcon(snap.congestion)} (${snap.current_speed} mph · session-time reading)`;
+  } else {
+    const t = await fetchTraffic(CONFIG.latitude, CONFIG.longitude, CONFIG.tomtomKey);
+    _traffic = t;
+    if (t) {
+      const minsOff = sessionTime ? Math.round(minutesFromSession(sessionTime)) : null;
+      const timeNote = minsOff !== null && Math.abs(minsOff) > 30
+        ? ` · ${Math.abs(minsOff)}m ${minsOff > 0 ? 'after' : 'before'} session`
+        : '';
+      trafficEl.textContent = `${trafficIcon(t.congestion)} (${t.currentSpeed} mph${timeNote})`;
+    } else {
+      trafficEl.textContent = sessionTime ? `Snapshot pending at ${sessionTime}` : '—';
+    }
+  }
+
+  // Check if today already has an entry
+  const existing = await getSessionByDate(today);
+  if (existing.length) {
+    const e = existing[0];
+    const banner = document.getElementById('already-logged');
+    banner.style.display = 'block';
+    banner.innerHTML = `✅ Already logged by <b>${e.reporter}</b> — ${e.kids_count} kids, ${e.senseis_count} senseis.`;
+    document.getElementById('log-form').querySelectorAll('input,button').forEach(el => el.disabled = true);
+  }
 }
 
 // ── Staffing preview ──────────────────────────────────────────────────────────
@@ -137,33 +173,6 @@ function updatePreview() {
 document.getElementById('f-kids').addEventListener('input', updatePreview);
 document.getElementById('f-senseis').addEventListener('input', updatePreview);
 
-// ── Previous entries for today ────────────────────────────────────────────────
-async function loadPrevious() {
-  const rows = await getSessionByDate(today);
-  const tbody = document.getElementById('prev-tbody');
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:1rem">None yet</td></tr>';
-    return;
-  }
-  tbody.innerHTML = rows.map(r =>
-    `<tr>
-      <td>${r.time_slot}</td>
-      <td>${r.kids_count}</td>
-      <td>${r.senseis_count}</td>
-      <td>${r.duration_hours}h</td>
-      <td style="color:var(--muted);font-size:.8rem">${r.notes || '—'}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteRow(${r.id})">Delete</button></td>
-    </tr>`
-  ).join('');
-}
-
-async function deleteRow(id) {
-  if (!confirm('Delete this entry?')) return;
-  await deleteSession(id);
-  loadPrevious();
-  toast('Entry deleted');
-}
-
 // ── Form submit ───────────────────────────────────────────────────────────────
 document.getElementById('log-form').addEventListener('submit', async e => {
   e.preventDefault();
@@ -173,27 +182,30 @@ document.getElementById('log-form').addEventListener('submit', async e => {
 
   const data = {
     date:           today,
-    time_slot:      autoTimeSlot(),
+    reporter:       document.getElementById('f-reporter').value.trim(),
+    time_slot:      sessionTimeForDate(today) || 'unscheduled',
     kids_count:     +document.getElementById('f-kids').value,
     senseis_count:  +document.getElementById('f-senseis').value,
     duration_hours: CONFIG.defaultSessionHours,
-    commute_score:  null,
-    notes:          null,
     weather_temp_f: _weather.temp_f    ?? null,
     weather_code:   _weather.code      ?? null,
     weather_precip: _weather.precip_mm ?? null,
     weather_desc:   _weather.desc      ?? null,
-    is_school_day:  _cal.type === 'school',
-    school_event:   _cal.desc          ?? null,
+    is_school_day:        ['school', 'early_release'].includes(_cal.type),
+    school_event:         _cal.desc ?? null,
+    traffic_congestion:   _traffic?.congestion  ?? null,
+    traffic_captured_at:  _traffic?.capturedAt  ?? null,
   };
 
   try {
     await logSession(data);
     toast('Session saved ✓');
-    document.getElementById('f-kids').value    = '';
-    document.getElementById('f-senseis').value = '';
-    document.getElementById('ratio-body').textContent = 'Enter kids + senseis to see analysis.';
-    loadPrevious();
+    // Lock the form — one entry per day
+    const banner = document.getElementById('already-logged');
+    banner.style.display = 'block';
+    banner.innerHTML = `✅ Logged by <b>${data.reporter}</b> — ${data.kids_count} kids, ${data.senseis_count} senseis.`;
+    document.getElementById('log-form').querySelectorAll('input,button').forEach(el => el.disabled = true);
+    document.getElementById('ratio-body').textContent = 'Entry saved.';
   } catch(err) {
     toast('Error: ' + err.message);
   } finally {
@@ -211,5 +223,6 @@ function toast(msg) {
 
 init().catch(console.error);
 </script>
+<script src="js/override.js" onerror="void 0"></script>
 </body>
 </html>
