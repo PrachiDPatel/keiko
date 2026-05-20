@@ -1,10 +1,16 @@
-# Keiko
+<div align="center">
+
+# 🥷 Keiko 🥷
 
 Log daily attendance at Code Ninjas → see exactly how much money was wasted on overstaffing.
 
 **[→ Open Keiko](https://prachidpatel.github.io/keiko/)**
 
-## What it does
+---
+
+## How it works
+
+</div>
 
 - **Dashboard** — today's snapshot, attendance trend, upcoming school events
 - **Log Session** — record kids + senseis per time block; weather + school status auto-fill
@@ -12,7 +18,11 @@ Log daily attendance at Code Ninjas → see exactly how much money was wasted on
 
 Built this because I kept noticing we had way too many senseis scheduled on slow school days and no easy way to quantify it.
 
-## Setup
+<div align="center">
+
+## 🔧 Setup 🔧
+
+</div>
 
 Needs a free [Supabase](https://supabase.com) project for the database.
 
@@ -20,9 +30,13 @@ Needs a free [Supabase](https://supabase.com) project for the database.
 2. Copy `js/config.example.js` → `js/config.js` and fill in your project URL + anon key
 3. Deploy to GitHub Pages or open locally — it's just static HTML
 
-> The Supabase anon key is safe to make public. `config.js` is gitignored by default so you'll need to either commit it or add it manually after deploying.
+> The Supabase anon key is safe to make public. `config.js` is gitignored by default so you'll need to commit it or add it manually after deploying.
 
-## Stack
+<div align="center">
+
+## 💻 Stack 💻
+
+</div>
 
 - HTML / CSS / JavaScript
 - Supabase (PostgreSQL)
