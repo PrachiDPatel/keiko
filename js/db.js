@@ -59,6 +59,17 @@ async function getPrevSession(beforeDate) {
   return data?.kids_count ?? null;
 }
 
+async function getPrev3AvgKids(beforeDate) {
+  const { data } = await getDB()
+    .from('sessions')
+    .select('kids_count')
+    .lt('date', beforeDate)
+    .order('date', { ascending: false })
+    .limit(3);
+  if (!data || !data.length) return null;
+  return +(data.reduce((a, s) => a + s.kids_count, 0) / data.length).toFixed(1);
+}
+
 async function getTrafficSnapshot(dateStr) {
   const { data } = await getDB()
     .from('traffic_snapshots')

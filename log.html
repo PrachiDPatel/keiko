@@ -13,6 +13,7 @@
   <a class="nav-link active" href="log.html"><span class="nav-icon">✏️</span> Log Session</a>
   <a class="nav-link" href="index.html"><span class="nav-icon">📊</span> Dashboard</a>
   <a class="nav-link" href="analysis.html"><span class="nav-icon">💰</span> Cost Analysis</a>
+  <div class="credits">inspo creds: Liam Thompson</div>
 </nav>
 
 <main class="main log-main">
@@ -47,8 +48,12 @@
       </form>
     </div>
 
-    <!-- Auto-filled context panel -->
-    <div style="display:flex;flex-direction:column;gap:1rem">
+    <!-- Auto-detected context (collapsed) -->
+    <details id="ctx-details">
+      <summary class="more-stats-summary" style="margin:.25rem 0">
+        <span class="more-stats-btn">Session context</span>
+        <div class="rule"></div>
+      </summary>
       <div class="card">
         <div class="card-title">Auto-detected context</div>
         <div style="display:flex;flex-direction:column;gap:.75rem;font-size:.875rem">
@@ -64,12 +69,7 @@
             <span id="ctx-traffic">Loading…</span></div>
         </div>
       </div>
-
-      <div class="card" id="ratio-preview">
-        <div class="card-title">Staffing preview</div>
-        <div id="ratio-body" style="font-size:.875rem;color:var(--muted)">Enter kids + senseis to see analysis.</div>
-      </div>
-    </div>
+    </details>
 
   </div>
 </main>
@@ -153,27 +153,6 @@ async function init() {
   }
 }
 
-// ── Staffing preview ──────────────────────────────────────────────────────────
-function updatePreview() {
-  const kids    = +document.getElementById('f-kids').value    || 0;
-  const senseis = +document.getElementById('f-senseis').value || 0;
-  if (!kids && !senseis) return;
-  const needed = Math.ceil(kids / CONFIG.preferredRatio);
-  const extra  = senseis - needed;
-  const waste  = Math.max(0, extra) * CONFIG.senseiHourlyRate * CONFIG.defaultSessionHours;
-  const msg = extra > 0
-    ? `<b style="color:var(--red)">Overstaffed by ${extra}</b> — $${waste.toFixed(2)} of unnecessary labor cost`
-    : extra < 0
-    ? `<b style="color:var(--amber)">Short by ${-extra} sensei(s)</b> — below preferred 1:${CONFIG.preferredRatio}`
-    : `<b style="color:var(--green)">Perfectly staffed</b> for a 1:${CONFIG.preferredRatio} ratio`;
-  document.getElementById('ratio-body').innerHTML =
-    `<div>${kids} kids ÷ ${CONFIG.preferredRatio} = <b>${needed}</b> senseis needed</div>
-     <div style="margin-top:.5rem">${msg}</div>`;
-}
-
-document.getElementById('f-kids').addEventListener('input', updatePreview);
-document.getElementById('f-senseis').addEventListener('input', updatePreview);
-
 // ── Form submit ───────────────────────────────────────────────────────────────
 document.getElementById('log-form').addEventListener('submit', async e => {
   e.preventDefault();
@@ -202,7 +181,10 @@ document.getElementById('log-form').addEventListener('submit', async e => {
     return Math.ceil((target - start) / (7 * 86400000)) + 1;
   }
 
-  const prevKids = await getPrevSession(today);
+  const [prevKids, prev3Avg] = await Promise.all([
+    getPrevSession(today),
+    getPrev3AvgKids(today),
+  ]);
   const dow = new Date(today + 'T12:00:00').getDay();
   const wk  = weekOfSchoolYear(today);
 
@@ -223,6 +205,7 @@ document.getElementById('log-form').addEventListener('submit', async e => {
     traffic_captured_at:  _traffic?.capturedAt  ?? null,
     week_of_school_year:  wk,
     prev_session_kids:    prevKids,
+    prev_3session_avg:    prev3Avg,
     day_of_week:          dow,
   };
 
@@ -234,7 +217,6 @@ document.getElementById('log-form').addEventListener('submit', async e => {
     banner.style.display = 'block';
     banner.innerHTML = `✅ Logged by <b>${data.reporter}</b> — ${data.kids_count} kids, ${data.senseis_count} senseis.`;
     document.getElementById('log-form').querySelectorAll('input,button').forEach(el => el.disabled = true);
-    document.getElementById('ratio-body').textContent = 'Entry saved.';
   } catch(err) {
     toast('Error: ' + err.message);
   } finally {
@@ -253,6 +235,5 @@ function toast(msg) {
 init().catch(console.error);
 </script>
 <script src="js/override.js" onerror="void 0"></script>
-<footer class="credits">inspo creds: Liam Thompson</footer>
 </body>
 </html>

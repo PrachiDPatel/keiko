@@ -28,7 +28,7 @@
   height: 3px;
   border-radius: 14px 14px 0 0;
 }
-.hero-card.purple::before { background: var(--purple); }
+.hero-card.purple::before { background: #6D28D9; }
 .hero-card.red::before    { background: var(--red); }
 .hero-card.amber::before  { background: var(--amber); }
 .hero-card.green::before  { background: var(--green); }
@@ -36,7 +36,7 @@
 .hero-card.blue::before   { background: #3B82F6; }
 .hero-label  { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: .4rem; }
 .hero-value  { font-size: 1.85rem; font-weight: 800; line-height: 1; }
-.hero-value.purple { color: var(--purple); }
+.hero-value.purple { color: #6D28D9; }
 .hero-value.red    { color: var(--red); }
 .hero-value.amber  { color: var(--amber); }
 .hero-value.green  { color: var(--green); }
@@ -45,7 +45,7 @@
 /* ── Section headers ───────────────────────────────────────────────────── */
 .section-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: .75rem;
   margin: 2rem 0 .9rem;
 }
@@ -55,11 +55,7 @@
   text-transform: uppercase;
   letter-spacing: .09em;
   color: var(--muted);
-}
-.section-head .rule {
-  flex: 1;
-  height: 1px;
-  background: var(--border);
+  white-space: nowrap;
 }
 
 /* ── Prediction badge ──────────────────────────────────────────────────── */
@@ -115,6 +111,7 @@
 
 @media (max-width: 900px) { .three-col { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 768px) { .three-col { grid-template-columns: 1fr; } }
+
 </style>
 </head>
 <body>
@@ -124,6 +121,7 @@
   <a class="nav-link" href="log.html"><span class="nav-icon">✏️</span> Log Session</a>
   <a class="nav-link" href="index.html"><span class="nav-icon">📊</span> Dashboard</a>
   <a class="nav-link active" href="analysis.html"><span class="nav-icon">🔬</span> Analysis</a>
+  <div class="credits">inspo creds: Liam Thompson</div>
 </nav>
 
 <main class="main">
@@ -146,7 +144,7 @@
         <input type="range" id="ctrl-ratio" min="2" max="8" value="4" style="width:140px">
       </div>
       <button class="btn btn-primary" id="run-btn" style="align-self:flex-end">Run</button>
-      <button class="btn btn-outline btn-sm" id="export-btn" style="align-self:flex-end">Export CSV</button>
+      <button class="btn btn-outline" id="export-btn" style="align-self:flex-end">Export CSV</button>
     </div>
   </div>
 
@@ -164,86 +162,92 @@
   <div class="section-head"><h2>Next session prediction</h2><div class="rule"></div></div>
   <div id="pred-section"></div>
 
-  <!-- Attendance section -->
-  <div class="section-head"><h2>Attendance patterns</h2><div class="rule"></div></div>
-  <div class="three-col">
-    <div class="card">
-      <div class="card-title">Avg kids by day of week</div>
-      <div class="chart-wrap"><canvas id="chart-dow-att"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">School day vs. non-school</div>
-      <div class="chart-wrap"><canvas id="chart-school"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Avg kids by month</div>
-      <div class="chart-wrap"><canvas id="chart-month"></canvas></div>
-    </div>
-  </div>
+  <!-- All detail sections under one More Stats toggle -->
+  <details id="more-stats-details">
+    <summary class="more-stats-summary">
+      <span class="more-stats-btn">More Stats</span>
+      <div class="rule"></div>
+    </summary>
 
-  <!-- Trends section -->
-  <div class="section-head"><h2>Trends over time</h2><div class="rule"></div></div>
-  <div class="two-col" style="margin-bottom:1.25rem">
-    <div class="card">
-      <div class="card-title">Attendance trend</div>
-      <div class="chart-wrap"><canvas id="chart-trend"></canvas></div>
+    <!-- Attendance patterns -->
+    <div class="section-head"><h2>Attendance patterns</h2><div class="rule"></div></div>
+    <div class="three-col">
+      <div class="card">
+        <div class="card-title">Avg kids by day of week</div>
+        <div class="chart-wrap"><canvas id="chart-dow-att"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">School day vs. non-school</div>
+        <div class="chart-wrap"><canvas id="chart-school"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Avg kids by month</div>
+        <div class="chart-wrap"><canvas id="chart-month"></canvas></div>
+      </div>
     </div>
-    <div class="card">
-      <div class="card-title">Week of school year</div>
-      <div class="chart-wrap"><canvas id="chart-schoolweek"></canvas></div>
-    </div>
-  </div>
 
-  <!-- Correlations section -->
-  <div class="section-head"><h2>Correlations</h2><div class="rule"></div></div>
-  <div class="three-col">
-    <div class="card">
-      <div class="card-title">Traffic vs kids</div>
-      <div class="chart-wrap"><canvas id="chart-traffic-corr"></canvas></div>
+    <!-- Trends over time -->
+    <div class="section-head"><h2>Trends over time</h2><div class="rule"></div></div>
+    <div class="two-col" style="margin-bottom:1.25rem">
+      <div class="card">
+        <div class="card-title">Attendance trend</div>
+        <div class="chart-wrap"><canvas id="chart-trend"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Week of school year</div>
+        <div class="chart-wrap"><canvas id="chart-schoolweek"></canvas></div>
+      </div>
     </div>
-    <div class="card">
-      <div class="card-title">Temperature vs kids</div>
-      <div class="chart-wrap"><canvas id="chart-temp-corr"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Key insights</div>
-      <div id="insights-body" style="font-size:.875rem;color:var(--muted)">Loading…</div>
-    </div>
-  </div>
 
-  <!-- Cost section -->
-  <div class="section-head"><h2>Staffing cost</h2><div class="rule"></div></div>
-  <div class="two-col" style="margin-bottom:1.25rem">
-    <div class="card">
-      <div class="card-title">Cumulative overstaffing cost</div>
-      <div class="chart-wrap"><canvas id="chart-cumulative"></canvas></div>
+    <!-- Correlations -->
+    <div class="section-head"><h2>Correlations</h2><div class="rule"></div></div>
+    <div class="three-col">
+      <div class="card">
+        <div class="card-title">Traffic vs kids</div>
+        <div class="chart-wrap"><canvas id="chart-traffic-corr"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Temperature vs kids</div>
+        <div class="chart-wrap"><canvas id="chart-temp-corr"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Key insights</div>
+        <div id="insights-body" style="font-size:.875rem;color:var(--muted)">Loading…</div>
+      </div>
     </div>
-    <div class="card">
-      <div class="card-title">Waste by day of week</div>
-      <div class="chart-wrap"><canvas id="chart-dow-waste"></canvas></div>
-    </div>
-  </div>
 
-  <!-- Session table -->
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
-      <div class="card-title" style="margin:0">Session detail</div>
+    <!-- Staffing cost -->
+    <div class="section-head"><h2>Staffing cost</h2><div class="rule"></div></div>
+    <div class="two-col" style="margin-bottom:1.25rem">
+      <div class="card">
+        <div class="card-title">Cumulative overstaffing cost</div>
+        <div class="chart-wrap"><canvas id="chart-cumulative"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Waste by day of week</div>
+        <div class="chart-wrap"><canvas id="chart-dow-waste"></canvas></div>
+      </div>
     </div>
-    <div class="table-wrap">
-      <table id="detail-table">
-        <thead>
-          <tr>
-            <th>Date</th><th>Day</th><th>Wk#</th><th>School?</th><th>Weather</th><th>Traffic</th>
-            <th>Kids</th><th>Prev</th><th>Senseis</th><th>Needed</th><th>Extra</th>
-            <th>Wasted $</th><th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="detail-tbody">
-          <tr><td colspan="13" style="text-align:center;color:var(--muted);padding:2rem">Run the analysis above to see results.</td></tr>
-        </tbody>
-      </table>
+
+    <!-- Session detail table -->
+    <div class="section-head"><h2>Session detail</h2><div class="rule"></div></div>
+    <div class="card">
+      <div class="table-wrap">
+        <table id="detail-table">
+          <thead>
+            <tr>
+              <th>Date</th><th>Day</th><th>Wk#</th><th>School?</th><th>Weather</th><th>Traffic</th>
+              <th>Kids</th><th>Prev</th><th>Senseis</th><th>Needed</th><th>Extra</th>
+              <th>Wasted $</th><th><span title="Perfect = right staffing. Over = too many senseis. Short = not enough.">Status ⓘ</span></th>
+            </tr>
+          </thead>
+          <tbody id="detail-tbody">
+            <tr><td colspan="13" style="text-align:center;color:var(--muted);padding:2rem">Run the analysis above to see results.</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
+  </details>
 </main>
 
 <div id="toast"></div>
@@ -369,13 +373,22 @@ function buildPrediction(sessions) {
     }
   }
 
-  // Last session
-  const lastKids = sessions[sessions.length-1]?.kids_count;
-  if (lastKids != null) {
-    factors.push({ label: `Last session: ${lastKids} kids`, cls: 'neutral' });
+  // Recency signal: last 3 sessions vs overall mean
+  let recentAdj = 0;
+  const last3 = sessions.slice(-3);
+  if (last3.length >= 2) {
+    const recentAvg = last3.reduce((a,s)=>a+s.kids_count,0)/last3.length;
+    recentAdj = (recentAvg - mean) * 0.35;
+    const dir = recentAvg > mean ? 'positive' : recentAvg < mean ? 'negative' : 'neutral';
+    factors.push({ label: `Recent avg (3 sessions): ${recentAvg.toFixed(1)}`, cls: dir });
+  } else {
+    const lastKids = sessions[sessions.length-1]?.kids_count;
+    if (lastKids != null) {
+      factors.push({ label: `Last session: ${lastKids} kids`, cls: 'neutral' });
+    }
   }
 
-  const estimate = mean + dowAdj + schoolAdj;
+  const estimate = mean + dowAdj + schoolAdj + recentAdj;
   const std = Math.sqrt(sessions.reduce((a,s)=>a+(s.kids_count-mean)**2,0)/n);
 
   const low  = Math.max(0, Math.round(estimate - std));
@@ -385,7 +398,7 @@ function buildPrediction(sessions) {
   // Which band is most likely (just highlight mid, bands show range)
   return {
     low, mid, high, active: 'mid',
-    note: `Based on ${n} sessions. Low/mid/high show ±1 standard deviation (σ = ${std.toFixed(1)}) around the day-adjusted mean. More data improves accuracy.`,
+    note: `Based on ${n} sessions. Estimate = overall mean ± day-of-week, school day, and 3-session recency adjustments. Low/high = ±1σ (${std.toFixed(1)}).`,
     factors,
   };
 }
