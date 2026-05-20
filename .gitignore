@@ -1,3 +1,4 @@
 .DS_Store
 runKeiko
 js/override.js
+js/secrets.js

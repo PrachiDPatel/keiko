@@ -11,8 +11,7 @@ const CONFIG = {
   senseiHourlyRate:     15,    // dollars
   defaultSessionHours:  1.5,
 
-  // TomTom Traffic Flow API key — get one free at developer.tomtom.com
-  tomtomKey: 'YOUR_TOMTOM_KEY',
+  tomtomKey: null, // set by js/secrets.js locally (gitignored)
 
   // Weekly session schedule — JS day index (0=Sun, 1=Mon … 6=Sat)
   schedule: {
