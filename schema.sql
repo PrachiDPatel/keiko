@@ -53,3 +53,8 @@ CREATE POLICY "allow_all" ON traffic_snapshots FOR ALL USING (true) WITH CHECK (
 -- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS traffic_congestion NUMERIC(3,2);
 -- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS traffic_captured_at TIMESTAMPTZ;
 -- (New) traffic_snapshots table: see CREATE TABLE above — run the full block
+
+-- ── Prediction columns (run once) ────────────────────────────────────────────
+-- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS week_of_school_year SMALLINT;
+-- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS prev_session_kids SMALLINT;
+-- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS day_of_week SMALLINT;

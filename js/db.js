@@ -48,6 +48,17 @@ async function updateSession(id, updates) {
   if (error) throw error;
 }
 
+async function getPrevSession(beforeDate) {
+  const { data } = await getDB()
+    .from('sessions')
+    .select('kids_count')
+    .lt('date', beforeDate)
+    .order('date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.kids_count ?? null;
+}
+
 async function getTrafficSnapshot(dateStr) {
   const { data } = await getDB()
     .from('traffic_snapshots')

@@ -180,6 +180,31 @@ document.getElementById('log-form').addEventListener('submit', async e => {
   btn.disabled = true;
   btn.textContent = 'Saving…';
 
+  // Compute week of school year
+  function weekOfSchoolYear(dateStr) {
+    const cal = SCHOOL_CALENDAR.getInfo(dateStr);
+    if (!['school','early_release'].includes(cal.type)) return null;
+    const yr = new Date(dateStr + 'T12:00:00').getFullYear();
+    // Find nearest school year start (Aug of same or prior year)
+    const candidates = [yr-1, yr, yr+1].map(y => {
+      const d = new Date(`${y}-08-01T12:00:00`);
+      // Walk forward to first school day
+      for (let i = 0; i < 60; i++) {
+        const s = new Date(d.getTime() + i*86400000).toISOString().slice(0,10);
+        if (['school','early_release'].includes(SCHOOL_CALENDAR.getInfo(s).type)) return new Date(s+'T12:00:00');
+      }
+      return null;
+    }).filter(Boolean);
+    const target = new Date(dateStr + 'T12:00:00');
+    const start = candidates.filter(c => c <= target).sort((a,b)=>b-a)[0];
+    if (!start) return null;
+    return Math.ceil((target - start) / (7 * 86400000)) + 1;
+  }
+
+  const prevKids = await getPrevSession(today);
+  const dow = new Date(today + 'T12:00:00').getDay();
+  const wk  = weekOfSchoolYear(today);
+
   const data = {
     date:           today,
     reporter:       document.getElementById('f-reporter').value.trim(),
@@ -195,6 +220,9 @@ document.getElementById('log-form').addEventListener('submit', async e => {
     school_event:         _cal.desc ?? null,
     traffic_congestion:   _traffic?.congestion  ?? null,
     traffic_captured_at:  _traffic?.capturedAt  ?? null,
+    week_of_school_year:  wk,
+    prev_session_kids:    prevKids,
+    day_of_week:          dow,
   };
 
   try {

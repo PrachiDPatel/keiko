@@ -3,8 +3,119 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cost Analysis — Keiko</title>
+<title>Analysis — Keiko</title>
 <link rel="stylesheet" href="css/style.css">
+<style>
+/* ── Analysis-page extras ──────────────────────────────────────────────── */
+.analysis-hero {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+.hero-card {
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 1.1rem 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 14px 14px 0 0;
+}
+.hero-card.purple::before { background: var(--purple); }
+.hero-card.red::before    { background: var(--red); }
+.hero-card.amber::before  { background: var(--amber); }
+.hero-card.green::before  { background: var(--green); }
+.hero-card.orange::before { background: var(--orange); }
+.hero-card.blue::before   { background: #3B82F6; }
+.hero-label  { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: .4rem; }
+.hero-value  { font-size: 1.85rem; font-weight: 800; line-height: 1; }
+.hero-value.purple { color: var(--purple); }
+.hero-value.red    { color: var(--red); }
+.hero-value.amber  { color: var(--amber); }
+.hero-value.green  { color: var(--green); }
+.hero-sub    { font-size: .72rem; color: var(--muted); margin-top: .3rem; }
+
+/* ── Section headers ───────────────────────────────────────────────────── */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  margin: 2rem 0 .9rem;
+}
+.section-head h2 {
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--muted);
+}
+.section-head .rule {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Prediction badge ──────────────────────────────────────────────────── */
+.pred-box {
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 1.4rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+.pred-title { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.pred-bands {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+.pred-band {
+  flex: 1;
+  min-width: 70px;
+  padding: .9rem .75rem;
+  border-radius: 10px;
+  text-align: center;
+}
+.pred-band .band-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .3rem; }
+.pred-band .band-val   { font-size: 1.4rem; font-weight: 800; }
+.pred-band.low    { background: #DCFCE7; color: #15803D; }
+.pred-band.mid    { background: #FEF9C3; color: #854D0E; }
+.pred-band.high   { background: #EDE9FE; color: #6D28D9; }
+.pred-band.active { outline: 2.5px solid currentColor; }
+.pred-note { font-size: .78rem; color: var(--muted); line-height: 1.5; }
+.pred-factors { display: flex; flex-wrap: wrap; gap: .4rem; }
+.pred-factor {
+  font-size: .72rem; font-weight: 600;
+  background: #F1F5F9; color: var(--text);
+  padding: .2rem .55rem; border-radius: 20px;
+}
+.pred-factor.positive { background: #DCFCE7; color: #15803D; }
+.pred-factor.negative { background: #FEE2E2; color: #DC2626; }
+.pred-factor.neutral  { background: #EDE9FE; color: #7C3AED; }
+
+/* ── Controls bar tweaks ───────────────────────────────────────────────── */
+.controls-bar { background: var(--card); border-radius: 12px; box-shadow: var(--shadow); padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+
+/* ── Chart three-col ───────────────────────────────────────────────────── */
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+
+/* ── Insights list ─────────────────────────────────────────────────────── */
+.insights { display: flex; flex-direction: column; gap: .5rem; font-size: .85rem; }
+.insight-row { display: flex; align-items: flex-start; gap: .6rem; }
+.insight-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: .35rem; flex-shrink: 0; }
+
+@media (max-width: 900px) { .three-col { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 768px) { .three-col { grid-template-columns: 1fr; } }
+</style>
 </head>
 <body>
 
@@ -12,55 +123,56 @@
   <div class="sidebar-logo"><span>🥷</span> Keiko</div>
   <a class="nav-link" href="log.html"><span class="nav-icon">✏️</span> Log Session</a>
   <a class="nav-link" href="index.html"><span class="nav-icon">📊</span> Dashboard</a>
-  <a class="nav-link active" href="analysis.html"><span class="nav-icon">💰</span> Cost Analysis</a>
+  <a class="nav-link active" href="analysis.html"><span class="nav-icon">🔬</span> Analysis</a>
 </nav>
 
 <main class="main">
-  <div class="page-title">Cost Analysis</div>
-  <div class="page-sub">How much would have been saved if staffing matched the model's preferred ratio?</div>
+  <div class="page-title">Analysis</div>
+  <div class="page-sub">Attendance patterns, staffing efficiency, and next-session predictions.</div>
 
   <!-- Controls -->
   <div class="controls-bar">
-    <div>
-      <label style="font-size:.8rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.25rem">From</label>
-      <input type="date" id="ctrl-from">
-    </div>
-    <div>
-      <label style="font-size:.8rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.25rem">To</label>
-      <input type="date" id="ctrl-to">
-    </div>
-    <div>
-      <label style="font-size:.8rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.25rem">Preferred ratio — 1 sensei per <span id="ratio-val">4</span> kids</label>
-      <input type="range" id="ctrl-ratio" min="2" max="8" value="4" style="width:160px">
-    </div>
-    <button class="btn btn-primary" id="run-btn">Run analysis</button>
-  </div>
-
-  <!-- Summary stats -->
-  <div class="stat-grid" id="sum-grid" style="margin-bottom:1.5rem">
-    <div class="stat-card"><div class="stat-label">Total wasted $</div><div class="stat-value red" id="sum-waste">—</div><div class="stat-sub">overstaffing cost</div></div>
-    <div class="stat-card"><div class="stat-label">Sessions analysed</div><div class="stat-value purple" id="sum-sessions">—</div></div>
-    <div class="stat-card"><div class="stat-label">Avg kids / session</div><div class="stat-value" id="sum-avg-kids">—</div></div>
-    <div class="stat-card"><div class="stat-label">Avg senseis / session</div><div class="stat-value" id="sum-avg-senseis">—</div></div>
-    <div class="stat-card"><div class="stat-label">Overstaffed sessions</div><div class="stat-value red" id="sum-over">—</div></div>
-    <div class="stat-card"><div class="stat-label">Understaffed sessions</div><div class="stat-value amber" id="sum-under">—</div></div>
-  </div>
-
-  <!-- Charts row -->
-  <div class="two-col" style="margin-bottom:1.25rem">
-    <div class="card">
-      <div class="card-title">Cumulative wasted $ over time</div>
-      <div class="chart-wrap"><canvas id="chart-cumulative"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Waste breakdown — by day of week</div>
-      <div class="chart-wrap"><canvas id="chart-dow"></canvas></div>
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+      <div>
+        <label style="font-size:.75rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.25rem">From</label>
+        <input type="date" id="ctrl-from">
+      </div>
+      <div>
+        <label style="font-size:.75rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.25rem">To</label>
+        <input type="date" id="ctrl-to">
+      </div>
+      <div>
+        <label style="font-size:.75rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.25rem">Ratio — 1 sensei per <span id="ratio-val">4</span> kids</label>
+        <input type="range" id="ctrl-ratio" min="2" max="8" value="4" style="width:140px">
+      </div>
+      <button class="btn btn-primary" id="run-btn" style="align-self:flex-end">Run</button>
+      <button class="btn btn-outline btn-sm" id="export-btn" style="align-self:flex-end">Export CSV</button>
     </div>
   </div>
 
-  <div class="two-col" style="margin-bottom:1.25rem">
+  <!-- Hero stats -->
+  <div class="analysis-hero" id="hero-grid">
+    <div class="hero-card red"><div class="hero-label">Total overstaffing cost</div><div class="hero-value red" id="sum-waste">—</div><div class="hero-sub">cumulative</div></div>
+    <div class="hero-card purple"><div class="hero-label">Sessions analysed</div><div class="hero-value purple" id="sum-sessions">—</div></div>
+    <div class="hero-card blue"><div class="hero-label">Avg kids / session</div><div class="hero-value" id="sum-avg-kids" style="color:#3B82F6">—</div></div>
+    <div class="hero-card orange"><div class="hero-label">Avg senseis / session</div><div class="hero-value" id="sum-avg-senseis" style="color:var(--orange)">—</div></div>
+    <div class="hero-card red"><div class="hero-label">Overstaffed sessions</div><div class="hero-value red" id="sum-over">—</div></div>
+    <div class="hero-card amber"><div class="hero-label">Understaffed sessions</div><div class="hero-value amber" id="sum-under">—</div></div>
+  </div>
+
+  <!-- Prediction -->
+  <div class="section-head"><h2>Next session prediction</h2><div class="rule"></div></div>
+  <div id="pred-section"></div>
+
+  <!-- Attendance section -->
+  <div class="section-head"><h2>Attendance patterns</h2><div class="rule"></div></div>
+  <div class="three-col">
     <div class="card">
-      <div class="card-title">School day vs. non-school day attendance</div>
+      <div class="card-title">Avg kids by day of week</div>
+      <div class="chart-wrap"><canvas id="chart-dow-att"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">School day vs. non-school</div>
       <div class="chart-wrap"><canvas id="chart-school"></canvas></div>
     </div>
     <div class="card">
@@ -69,23 +181,65 @@
     </div>
   </div>
 
+  <!-- Trends section -->
+  <div class="section-head"><h2>Trends over time</h2><div class="rule"></div></div>
+  <div class="two-col" style="margin-bottom:1.25rem">
+    <div class="card">
+      <div class="card-title">Attendance trend</div>
+      <div class="chart-wrap"><canvas id="chart-trend"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Week of school year</div>
+      <div class="chart-wrap"><canvas id="chart-schoolweek"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Correlations section -->
+  <div class="section-head"><h2>Correlations</h2><div class="rule"></div></div>
+  <div class="three-col">
+    <div class="card">
+      <div class="card-title">Traffic vs kids</div>
+      <div class="chart-wrap"><canvas id="chart-traffic-corr"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Temperature vs kids</div>
+      <div class="chart-wrap"><canvas id="chart-temp-corr"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Key insights</div>
+      <div id="insights-body" style="font-size:.875rem;color:var(--muted)">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Cost section -->
+  <div class="section-head"><h2>Staffing cost</h2><div class="rule"></div></div>
+  <div class="two-col" style="margin-bottom:1.25rem">
+    <div class="card">
+      <div class="card-title">Cumulative overstaffing cost</div>
+      <div class="chart-wrap"><canvas id="chart-cumulative"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Waste by day of week</div>
+      <div class="chart-wrap"><canvas id="chart-dow-waste"></canvas></div>
+    </div>
+  </div>
+
   <!-- Session table -->
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
       <div class="card-title" style="margin:0">Session detail</div>
-      <button class="btn btn-outline btn-sm" id="export-btn">Export CSV</button>
     </div>
     <div class="table-wrap">
       <table id="detail-table">
         <thead>
           <tr>
-            <th>Date</th><th>Slot</th><th>School?</th><th>Weather</th>
-            <th>Kids</th><th>Senseis</th><th>Needed</th><th>Extra</th>
+            <th>Date</th><th>Day</th><th>Wk#</th><th>School?</th><th>Weather</th><th>Traffic</th>
+            <th>Kids</th><th>Prev</th><th>Senseis</th><th>Needed</th><th>Extra</th>
             <th>Wasted $</th><th>Status</th>
           </tr>
         </thead>
         <tbody id="detail-tbody">
-          <tr><td colspan="10" style="text-align:center;color:var(--muted);padding:2rem">Run the analysis above to see results.</td></tr>
+          <tr><td colspan="13" style="text-align:center;color:var(--muted);padding:2rem">Run the analysis above to see results.</td></tr>
         </tbody>
       </table>
     </div>
@@ -101,23 +255,142 @@
 <script src="js/weather.js"></script>
 <script src="js/calendar.js"></script>
 <script>
-// ── Default date range: last 90 days ────────────────────────────────────────
+// ── Defaults ─────────────────────────────────────────────────────────────────
 const toDate   = new Date().toISOString().slice(0,10);
-const fromDate = new Date(Date.now() - 90*86400000).toISOString().slice(0,10);
-document.getElementById('ctrl-from').value = fromDate;
-document.getElementById('ctrl-to').value   = toDate;
+const fromDate = new Date(Date.now() - 180*86400000).toISOString().slice(0,10);
+document.getElementById('ctrl-from').value  = fromDate;
+document.getElementById('ctrl-to').value    = toDate;
 document.getElementById('ctrl-ratio').value = CONFIG.preferredRatio;
 document.getElementById('ratio-val').textContent = CONFIG.preferredRatio;
-
 document.getElementById('ctrl-ratio').addEventListener('input', e => {
   document.getElementById('ratio-val').textContent = e.target.value;
 });
 
-// ── Chart instances (so we can destroy before re-creating) ───────────────────
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ── Chart registry ────────────────────────────────────────────────────────────
 let charts = {};
 function destroyCharts() { Object.values(charts).forEach(c => c?.destroy()); charts = {}; }
 
-// ── Run ──────────────────────────────────────────────────────────────────────
+// ── Chart factory ─────────────────────────────────────────────────────────────
+function mkChart(id, type, labels, datasets, opts = {}) {
+  const defaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true } },
+  };
+  return new Chart(document.getElementById(id), {
+    type,
+    data: { labels, datasets },
+    options: { ...defaults, ...opts },
+  });
+}
+
+// ── Pearson correlation ───────────────────────────────────────────────────────
+function pearson(xs, ys) {
+  if (xs.length < 3) return null;
+  const n  = xs.length;
+  const mx = xs.reduce((a,v)=>a+v,0)/n;
+  const my = ys.reduce((a,v)=>a+v,0)/n;
+  const num   = xs.reduce((a,v,i)=>a+(v-mx)*(ys[i]-my),0);
+  const denX  = Math.sqrt(xs.reduce((a,v)=>a+(v-mx)**2,0));
+  const denY  = Math.sqrt(ys.reduce((a,v)=>a+(v-my)**2,0));
+  if (!denX || !denY) return null;
+  return +(num/(denX*denY)).toFixed(2);
+}
+
+// ── Prediction logic ──────────────────────────────────────────────────────────
+function buildPrediction(sessions) {
+  const MIN = 10;
+  const n   = sessions.length;
+
+  // Next scheduled session
+  const now = new Date();
+  let nextDate = null, nextDow = null;
+  for (let i = 1; i <= 14; i++) {
+    const d = new Date(now.getTime() + i*86400000);
+    const dow = d.getDay();
+    if (CONFIG.schedule[dow]) {
+      nextDate = d.toISOString().slice(0,10);
+      nextDow  = dow;
+      break;
+    }
+  }
+
+  const factors = [];
+
+  if (n < MIN) {
+    return {
+      low: '?', mid: '?', high: '?', active: null,
+      note: `Need at least ${MIN} sessions for predictions — you have ${n} so far. Keep logging and predictions will appear automatically.`,
+      factors,
+    };
+  }
+
+  // Base: mean kids
+  const mean = sessions.reduce((a,s)=>a+s.kids_count,0)/n;
+
+  // Day-of-week adjustment
+  let dowAdj = 0;
+  if (nextDow !== null) {
+    const sameDow = sessions.filter(s => new Date(s.date+'T12:00:00').getDay() === nextDow);
+    if (sameDow.length >= 3) {
+      const dowMean = sameDow.reduce((a,s)=>a+s.kids_count,0)/sameDow.length;
+      dowAdj = dowMean - mean;
+      const dir = dowAdj > 0 ? 'positive' : 'negative';
+      factors.push({ label: `${DAYS[nextDow]}: avg ${dowMean.toFixed(1)}`, cls: dir });
+    }
+  }
+
+  // School day
+  let schoolAdj = 0;
+  if (nextDate) {
+    const cal = SCHOOL_CALENDAR.getInfo(nextDate);
+    const isSchool = ['school','early_release'].includes(cal.type);
+    const schoolSessions = sessions.filter(s => s.is_school_day);
+    const noSchoolSessions = sessions.filter(s => !s.is_school_day);
+    if (schoolSessions.length >= 3 && noSchoolSessions.length >= 3) {
+      const sm = schoolSessions.reduce((a,s)=>a+s.kids_count,0)/schoolSessions.length;
+      const nm = noSchoolSessions.reduce((a,s)=>a+s.kids_count,0)/noSchoolSessions.length;
+      schoolAdj = isSchool ? (sm - mean) : (nm - mean);
+      factors.push({ label: cal.desc, cls: isSchool ? 'neutral' : 'neutral' });
+    }
+  }
+
+  // Traffic/weather signal
+  const trafficPairs = sessions.filter(s => s.traffic_congestion != null);
+  if (trafficPairs.length >= 5) {
+    const r = pearson(trafficPairs.map(s=>s.traffic_congestion), trafficPairs.map(s=>s.kids_count));
+    if (r !== null) {
+      const label = r > .3 ? 'Traffic correlates +' : r < -.3 ? 'Traffic correlates −' : 'Traffic: weak signal';
+      factors.push({ label, cls: r > .3 ? 'positive' : r < -.3 ? 'negative' : 'neutral' });
+    }
+  }
+
+  // Last session
+  const lastKids = sessions[sessions.length-1]?.kids_count;
+  if (lastKids != null) {
+    factors.push({ label: `Last session: ${lastKids} kids`, cls: 'neutral' });
+  }
+
+  const estimate = mean + dowAdj + schoolAdj;
+  const std = Math.sqrt(sessions.reduce((a,s)=>a+(s.kids_count-mean)**2,0)/n);
+
+  const low  = Math.max(0, Math.round(estimate - std));
+  const mid  = Math.max(0, Math.round(estimate));
+  const high = Math.max(0, Math.round(estimate + std));
+
+  // Which band is most likely (just highlight mid, bands show range)
+  return {
+    low, mid, high, active: 'mid',
+    note: `Based on ${n} sessions. Low/mid/high show ±1 standard deviation (σ = ${std.toFixed(1)}) around the day-adjusted mean. More data improves accuracy.`,
+    factors,
+  };
+}
+
+// ── Main analysis ─────────────────────────────────────────────────────────────
 async function runAnalysis() {
   const from  = document.getElementById('ctrl-from').value;
   const to    = document.getElementById('ctrl-to').value;
@@ -126,71 +399,74 @@ async function runAnalysis() {
 
   document.getElementById('run-btn').textContent = 'Loading…';
   const raw = await getSessions({ from, to });
-  document.getElementById('run-btn').textContent = 'Run analysis';
+  document.getElementById('run-btn').textContent = 'Run';
 
-  if (!raw.length) {
-    toast('No sessions in that range.');
-    return;
-  }
+  if (!raw.length) { toast('No sessions in that range.'); return; }
 
   const sessions = computeAnalysis(raw, ratio, rate).reverse(); // chronological
   const stats    = summaryStats(sessions);
 
-  // Summary cards
-  document.getElementById('sum-waste').textContent    = `$${stats.totalWaste.toFixed(2)}`;
-  document.getElementById('sum-sessions').textContent = stats.total;
-  document.getElementById('sum-avg-kids').textContent = stats.avgKids.toFixed(1);
-  document.getElementById('sum-avg-senseis').textContent = stats.avgSenseis.toFixed(1);
-  document.getElementById('sum-over').textContent     = stats.overstaffed;
-  document.getElementById('sum-under').textContent    = stats.understaffed;
+  // ── Hero stats ────────────────────────────────────────────────────────────
+  document.getElementById('sum-waste').textContent        = `$${stats.totalWaste.toFixed(0)}`;
+  document.getElementById('sum-sessions').textContent     = stats.total;
+  document.getElementById('sum-avg-kids').textContent     = stats.avgKids.toFixed(1);
+  document.getElementById('sum-avg-senseis').textContent  = stats.avgSenseis.toFixed(1);
+  document.getElementById('sum-over').textContent         = stats.overstaffed;
+  document.getElementById('sum-under').textContent        = stats.understaffed;
 
   destroyCharts();
 
-  // ── Cumulative waste ───────────────────────────────────────────────────────
-  let cum = 0;
-  const cumData = sessions.map(s => { cum += s.waste; return +cum.toFixed(2); });
-  charts.cumulative = new Chart(document.getElementById('chart-cumulative'), {
-    type: 'line',
-    data: {
-      labels: sessions.map(s => s.date.slice(5)),
-      datasets: [{ label: 'Cumulative wasted $', data: cumData, borderColor: '#EF4444', backgroundColor: 'rgba(239,68,68,.1)', fill: true, tension: .3 }]
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$'+v } } } }
-  });
+  // ── Prediction ────────────────────────────────────────────────────────────
+  const pred = buildPrediction(sessions);
+  const predSection = document.getElementById('pred-section');
+  predSection.innerHTML = `
+    <div class="pred-box">
+      <div class="pred-title">Kids expected — next session</div>
+      <div class="pred-bands">
+        <div class="pred-band low ${pred.active==='low'?'active':''}">
+          <div class="band-label">Low</div>
+          <div class="band-val">${pred.low}</div>
+        </div>
+        <div class="pred-band mid ${pred.active==='mid'?'active':''}">
+          <div class="band-label">Mid</div>
+          <div class="band-val">${pred.mid}</div>
+        </div>
+        <div class="pred-band high ${pred.active==='high'?'active':''}">
+          <div class="band-label">High</div>
+          <div class="band-val">${pred.high}</div>
+        </div>
+      </div>
+      ${pred.factors.length ? `<div class="pred-factors">${pred.factors.map(f=>`<span class="pred-factor ${f.cls}">${f.label}</span>`).join('')}</div>` : ''}
+      <div class="pred-note">${pred.note}</div>
+    </div>`;
 
-  // ── Day of week ───────────────────────────────────────────────────────────
-  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const dowWaste = Array(7).fill(0);
+  // ── Attendance by day of week ─────────────────────────────────────────────
+  const dowKids  = Array(7).fill(0);
   const dowCount = Array(7).fill(0);
   sessions.forEach(s => {
-    const d = new Date(s.date + 'T12:00:00').getDay();
-    dowWaste[d] += s.waste;
+    const d = new Date(s.date+'T12:00:00').getDay();
+    dowKids[d]  += s.kids_count;
     dowCount[d]++;
   });
-  charts.dow = new Chart(document.getElementById('chart-dow'), {
-    type: 'bar',
-    data: {
-      labels: DAYS,
-      datasets: [{ label: 'Total wasted $', data: dowWaste.map(v=>+v.toFixed(2)), backgroundColor: 'rgba(108,62,245,.7)' }]
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$'+v } } } }
-  });
+  const scheduledDays = Object.keys(CONFIG.schedule).map(Number);
+  const dowLabels = scheduledDays.map(d => DAYS[d]);
+  const dowData   = scheduledDays.map(d => dowCount[d] ? +(dowKids[d]/dowCount[d]).toFixed(1) : 0);
+  charts.dowAtt = mkChart('chart-dow-att', 'bar', dowLabels,
+    [{ data: dowData, backgroundColor: ['rgba(108,62,245,.7)','rgba(59,130,246,.7)','rgba(255,107,53,.7)','rgba(34,197,94,.7)'] }],
+    { scales: { y: { beginAtZero: true, title: { display: true, text: 'Avg kids' } } } }
+  );
 
   // ── School vs non-school ──────────────────────────────────────────────────
-  const school    = sessions.filter(s => s.is_school_day);
-  const noSchool  = sessions.filter(s => !s.is_school_day);
-  const avgKidsSchool   = school.length   ? school.reduce((a,s)=>a+s.kids_count,0)/school.length   : 0;
-  const avgKidsNoSchool = noSchool.length ? noSchool.reduce((a,s)=>a+s.kids_count,0)/noSchool.length : 0;
-  charts.school = new Chart(document.getElementById('chart-school'), {
-    type: 'bar',
-    data: {
-      labels: ['School days', 'Non-school days'],
-      datasets: [{ data: [+avgKidsSchool.toFixed(1), +avgKidsNoSchool.toFixed(1)], backgroundColor: ['rgba(108,62,245,.7)', 'rgba(34,197,94,.7)'] }]
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Avg kids' } } } }
-  });
+  const school   = sessions.filter(s => s.is_school_day);
+  const noSchool = sessions.filter(s => !s.is_school_day);
+  const avgSchool   = school.length   ? school.reduce((a,s)=>a+s.kids_count,0)/school.length   : 0;
+  const avgNoSchool = noSchool.length ? noSchool.reduce((a,s)=>a+s.kids_count,0)/noSchool.length : 0;
+  charts.school = mkChart('chart-school', 'bar', ['School day', 'No school'],
+    [{ data: [+avgSchool.toFixed(1), +avgNoSchool.toFixed(1)], backgroundColor: ['rgba(108,62,245,.7)', 'rgba(34,197,94,.7)'] }],
+    { scales: { y: { beginAtZero: true, title: { display: true, text: 'Avg kids' } } } }
+  );
 
-  // ── Month breakdown ───────────────────────────────────────────────────────
+  // ── Avg by month ──────────────────────────────────────────────────────────
   const monthMap = {};
   sessions.forEach(s => {
     const m = s.date.slice(0,7);
@@ -200,28 +476,171 @@ async function runAnalysis() {
   });
   const mLabels = Object.keys(monthMap).sort();
   const mData   = mLabels.map(m => +(monthMap[m].kids/monthMap[m].n).toFixed(1));
-  charts.month = new Chart(document.getElementById('chart-month'), {
-    type: 'bar',
-    data: {
-      labels: mLabels,
-      datasets: [{ data: mData, backgroundColor: 'rgba(255,107,53,.7)' }]
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Avg kids' } } } }
+  const mDisplay = mLabels.map(m => { const [,mo] = m.split('-'); return MONTH_NAMES[+mo-1]; });
+  charts.month = mkChart('chart-month', 'bar', mDisplay,
+    [{ data: mData, backgroundColor: 'rgba(255,107,53,.7)' }],
+    { scales: { y: { beginAtZero: true, title: { display: true, text: 'Avg kids' } } } }
+  );
+
+  // ── Trend ─────────────────────────────────────────────────────────────────
+  charts.trend = mkChart('chart-trend', 'line', sessions.map(s=>s.date.slice(5)),
+    [
+      { label: 'Kids', data: sessions.map(s=>s.kids_count), borderColor: '#6C3EF5', backgroundColor: 'rgba(108,62,245,.08)', tension: .35, fill: true },
+      { label: 'Senseis', data: sessions.map(s=>s.senseis_count), borderColor: '#FF6B35', backgroundColor: 'rgba(255,107,53,.08)', tension: .35, fill: false },
+    ],
+    { plugins: { legend: { display: true, position: 'bottom' } } }
+  );
+
+  // ── Week of school year ───────────────────────────────────────────────────
+  const weekSessions = sessions.filter(s => s.week_of_school_year != null);
+  if (weekSessions.length >= 3) {
+    const weekMap = {};
+    weekSessions.forEach(s => {
+      const w = s.week_of_school_year;
+      if (!weekMap[w]) weekMap[w] = { kids: 0, n: 0 };
+      weekMap[w].kids += s.kids_count; weekMap[w].n++;
+    });
+    const wKeys = Object.keys(weekMap).map(Number).sort((a,b)=>a-b);
+    charts.schoolweek = mkChart('chart-schoolweek', 'line', wKeys.map(w=>`Wk ${w}`),
+      [{ data: wKeys.map(w=>+(weekMap[w].kids/weekMap[w].n).toFixed(1)), borderColor: '#3B82F6', backgroundColor: 'rgba(59,130,246,.1)', tension: .4, fill: true }],
+      { scales: { y: { beginAtZero: true, title: { display: true, text: 'Avg kids' } } } }
+    );
+  } else {
+    document.getElementById('chart-schoolweek').closest('.card').querySelector('.card-title').textContent = 'Week of school year (need more data)';
+    document.getElementById('chart-schoolweek').parentElement.innerHTML =
+      `<div style="display:flex;align-items:center;justify-content:center;height:200px;color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Week-of-school-year data will appear after more sessions are logged with this field.</div>`;
+  }
+
+  // ── Traffic correlation ───────────────────────────────────────────────────
+  const tPairs = sessions.filter(s => s.traffic_congestion != null);
+  if (tPairs.length >= 3) {
+    const r = pearson(tPairs.map(s=>s.traffic_congestion), tPairs.map(s=>s.kids_count));
+    charts.traffic = mkChart('chart-traffic-corr', 'scatter',
+      null,
+      [{
+        data: tPairs.map(s=>({ x: +s.traffic_congestion.toFixed(2), y: s.kids_count })),
+        backgroundColor: 'rgba(108,62,245,.55)',
+        pointRadius: 5,
+      }],
+      {
+        scales: {
+          x: { title: { display: true, text: 'Traffic congestion (0=free, 1=standstill)' } },
+          y: { title: { display: true, text: 'Kids' }, beginAtZero: true },
+        },
+        plugins: {
+          legend: { display: false },
+          title: { display: r !== null, text: `Pearson r = ${r}`, font: { size: 11 } },
+        },
+      }
+    );
+  } else {
+    document.getElementById('chart-traffic-corr').parentElement.innerHTML =
+      `<div class="card-title">Traffic vs kids</div><div style="display:flex;align-items:center;justify-content:center;height:200px;color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Traffic snapshots will populate as sessions are logged. Need 3+ readings.</div>`;
+  }
+
+  // ── Temperature correlation ───────────────────────────────────────────────
+  const tempPairs = sessions.filter(s => s.weather_temp_f != null);
+  if (tempPairs.length >= 3) {
+    const r = pearson(tempPairs.map(s=>+s.weather_temp_f), tempPairs.map(s=>s.kids_count));
+    charts.temp = mkChart('chart-temp-corr', 'scatter',
+      null,
+      [{
+        data: tempPairs.map(s=>({ x: +s.weather_temp_f, y: s.kids_count })),
+        backgroundColor: 'rgba(255,107,53,.55)',
+        pointRadius: 5,
+      }],
+      {
+        scales: {
+          x: { title: { display: true, text: 'Temperature (°F)' } },
+          y: { title: { display: true, text: 'Kids' }, beginAtZero: true },
+        },
+        plugins: {
+          legend: { display: false },
+          title: { display: r !== null, text: `Pearson r = ${r}`, font: { size: 11 } },
+        },
+      }
+    );
+  } else {
+    document.getElementById('chart-temp-corr').parentElement.innerHTML =
+      `<div class="card-title">Temperature vs kids</div><div style="display:flex;align-items:center;justify-content:center;height:200px;color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Weather data will appear after more sessions are logged.</div>`;
+  }
+
+  // ── Key insights ──────────────────────────────────────────────────────────
+  const insightsEl = document.getElementById('insights-body');
+  const insights = [];
+
+  // Best day
+  const scheduledD = Object.keys(CONFIG.schedule).map(Number);
+  let bestDay = null, bestAvg = -1;
+  scheduledD.forEach(d => {
+    const avg = dowCount[d] ? dowKids[d]/dowCount[d] : 0;
+    if (avg > bestAvg) { bestAvg = avg; bestDay = d; }
   });
+  if (bestDay !== null && dowCount[bestDay] >= 2) {
+    insights.push({ color: 'var(--purple)', text: `<b>${DAYS[bestDay]}</b> is your busiest day — avg ${bestAvg.toFixed(1)} kids.` });
+  }
+
+  // School vs no-school gap
+  if (school.length >= 2 && noSchool.length >= 2) {
+    const diff = avgSchool - avgNoSchool;
+    const sign = diff > 0 ? '+' : '';
+    insights.push({ color: diff > 0 ? 'var(--purple)' : 'var(--green)', text: `School days average <b>${sign}${diff.toFixed(1)} kids</b> vs. non-school days.` });
+  }
+
+  // Traffic correlation
+  if (tPairs.length >= 5) {
+    const r = pearson(tPairs.map(s=>s.traffic_congestion), tPairs.map(s=>s.kids_count));
+    if (r !== null && Math.abs(r) >= 0.2) {
+      const dir = r > 0 ? 'more' : 'fewer';
+      insights.push({ color: 'var(--orange)', text: `Traffic and attendance are <b>${r > .4 || r < -.4 ? 'strongly' : 'mildly'} correlated</b> (r=${r}) — higher congestion → ${dir} kids.` });
+    }
+  }
+
+  // Overstaffing rate
+  const overRate = stats.total > 0 ? Math.round(100*stats.overstaffed/stats.total) : 0;
+  if (overRate > 0) {
+    const clr = overRate > 50 ? 'var(--red)' : overRate > 25 ? 'var(--amber)' : 'var(--green)';
+    insights.push({ color: clr, text: `<b>${overRate}%</b> of sessions were overstaffed — $${stats.totalWaste.toFixed(0)} total unnecessary cost.` });
+  }
+
+  insightsEl.innerHTML = insights.length
+    ? `<div class="insights">${insights.map(i=>`<div class="insight-row"><div class="insight-dot" style="background:${i.color}"></div><div>${i.text}</div></div>`).join('')}</div>`
+    : `<div style="color:var(--muted)">Insights will appear as more sessions are logged.</div>`;
+
+  // ── Cumulative waste ──────────────────────────────────────────────────────
+  let cum = 0;
+  const cumData = sessions.map(s => { cum += s.waste; return +cum.toFixed(2); });
+  charts.cumulative = mkChart('chart-cumulative', 'line', sessions.map(s=>s.date.slice(5)),
+    [{ label: 'Cumulative $', data: cumData, borderColor: '#EF4444', backgroundColor: 'rgba(239,68,68,.08)', fill: true, tension: .3 }],
+    { scales: { y: { beginAtZero: true, ticks: { callback: v=>'$'+v } } } }
+  );
+
+  // ── Waste by day of week ──────────────────────────────────────────────────
+  const dowWaste = Array(7).fill(0);
+  sessions.forEach(s => { dowWaste[new Date(s.date+'T12:00:00').getDay()] += s.waste; });
+  charts.dowWaste = mkChart('chart-dow-waste', 'bar', scheduledDays.map(d=>DAYS[d]),
+    [{ data: scheduledDays.map(d=>+dowWaste[d].toFixed(2)), backgroundColor: 'rgba(239,68,68,.7)' }],
+    { scales: { y: { beginAtZero: true, ticks: { callback: v=>'$'+v } } } }
+  );
 
   // ── Detail table ──────────────────────────────────────────────────────────
   const tbody = document.getElementById('detail-tbody');
   tbody.innerHTML = sessions.map(s => {
+    const dow  = new Date(s.date+'T12:00:00').getDay();
     const status = s.extra > 0  ? `<span class="badge badge-red">+${s.extra} over</span>`
                  : s.shortage > 0 ? `<span class="badge badge-amber">${s.shortage} short</span>`
                  : `<span class="badge badge-green">ok</span>`;
     const schoolB = s.is_school_day ? '<span class="badge badge-purple">school</span>' : '<span class="badge badge-green">off</span>';
+    const trafficVal = s.traffic_congestion != null ? trafficIcon(s.traffic_congestion) : '—';
     return `<tr>
       <td>${s.date}</td>
-      <td>${s.time_slot}</td>
+      <td style="color:var(--muted)">${DAYS[dow]}</td>
+      <td style="color:var(--muted)">${s.week_of_school_year ?? '—'}</td>
       <td>${schoolB}</td>
       <td title="${s.weather_desc||''}">${s.weather_code!=null?weatherIcon(s.weather_code):'—'} ${s.weather_temp_f?Math.round(s.weather_temp_f)+'°F':''}</td>
-      <td>${s.kids_count}</td>
+      <td>${trafficVal}</td>
+      <td><b>${s.kids_count}</b></td>
+      <td style="color:var(--muted)">${s.prev_session_kids ?? '—'}</td>
       <td>${s.senseis_count}</td>
       <td>${s.needed}</td>
       <td>${s.extra > 0 ? '+'+s.extra : s.extra < 0 ? s.extra : '0'}</td>
@@ -230,26 +649,30 @@ async function runAnalysis() {
     </tr>`;
   }).join('');
 
-  // Store for CSV export
   window._analysisData = sessions;
 }
 
 // ── CSV export ────────────────────────────────────────────────────────────────
 document.getElementById('export-btn').addEventListener('click', () => {
   if (!window._analysisData?.length) { toast('Run analysis first.'); return; }
-  const headers = 'date,time_slot,is_school_day,kids,senseis,needed,extra,waste_usd,weather,temp_f,notes';
-  const rows = window._analysisData.map(s =>
-    [s.date,s.time_slot,s.is_school_day,s.kids_count,s.senseis_count,s.needed,s.extra,s.waste.toFixed(2),s.weather_desc||'',s.weather_temp_f||'',s.notes||''].join(',')
-  );
+  const headers = 'date,day,week_of_school_year,is_school_day,school_event,weather,temp_f,traffic,kids,prev_kids,senseis,needed,extra,waste_usd';
+  const DAYS_ = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const rows = window._analysisData.map(s => [
+    s.date, DAYS_[new Date(s.date+'T12:00:00').getDay()],
+    s.week_of_school_year??'', s.is_school_day, `"${(s.school_event||'').replace(/"/g,'""')}"`,
+    `"${(s.weather_desc||'').replace(/"/g,'""')}"`, s.weather_temp_f||'', s.traffic_congestion??'',
+    s.kids_count, s.prev_session_kids??'', s.senseis_count,
+    s.needed, s.extra, s.waste.toFixed(2),
+  ].join(','));
   const blob = new Blob([[headers,...rows].join('\n')], {type:'text/csv'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `codeninjas_analysis_${document.getElementById('ctrl-from').value}_${document.getElementById('ctrl-to').value}.csv`;
+  a.download = `keiko_analysis_${document.getElementById('ctrl-from').value}_to_${document.getElementById('ctrl-to').value}.csv`;
   a.click();
 });
 
 document.getElementById('run-btn').addEventListener('click', runAnalysis);
-runAnalysis(); // auto-run on load
+runAnalysis();
 
 function toast(msg) {
   const t = document.getElementById('toast');
