@@ -148,3 +148,11 @@ input[type=range] { accent-color: var(--purple); cursor: pointer; }
   .form-grid { grid-template-columns: 1fr; }
   .log-wrap { grid-template-columns: 1fr; max-width: 100%; }
 }
+
+.credits {
+  text-align: center;
+  font-size: 0.7rem;
+  color: #64748b;
+  padding: 2rem 0 1rem;
+  opacity: 0.6;
+}
