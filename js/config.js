@@ -10,4 +10,15 @@ const CONFIG = {
   preferredRatio:       4,     // 1 sensei per N kids
   senseiHourlyRate:     15,    // dollars
   defaultSessionHours:  1.5,
+
+  // TomTom Traffic Flow API key — get one free at developer.tomtom.com
+  tomtomKey: 'YOUR_TOMTOM_KEY',
+
+  // Weekly session schedule — JS day index (0=Sun, 1=Mon … 6=Sat)
+  schedule: {
+    2: '3:45 PM',   // Tuesday
+    3: '3:45 PM',   // Wednesday
+    4: '3:45 PM',   // Thursday
+    6: '10:00 AM',  // Saturday
+  },
 };

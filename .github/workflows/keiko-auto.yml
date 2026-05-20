@@ -1,0 +1,26 @@
+name: Keiko Traffic Snapshot
+
+on:
+  schedule:
+    # 3:45 PM ET weekdays — EDT (UTC-4): 19:45 UTC, EST (UTC-5): 20:45 UTC
+    - cron: '45 19 * * 2,3,4'
+    - cron: '45 20 * * 2,3,4'
+    # 10:00 AM ET Saturday — EDT: 14:00 UTC, EST: 15:00 UTC
+    - cron: '0 14 * * 6'
+    - cron: '0 15 * * 6'
+  workflow_dispatch:  # allow manual trigger for testing
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Capture traffic snapshot
+        run: node .github/scripts/traffic-snapshot.js
+        env:
+          TOMTOM_KEY:    ${{ secrets.TOMTOM_KEY }}
+          SUPABASE_URL:  ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY:  ${{ secrets.SUPABASE_KEY }}

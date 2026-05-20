@@ -48,6 +48,15 @@ async function updateSession(id, updates) {
   if (error) throw error;
 }
 
+async function getTrafficSnapshot(dateStr) {
+  const { data } = await getDB()
+    .from('traffic_snapshots')
+    .select('*')
+    .eq('date', dateStr)
+    .maybeSingle();
+  return data || null;
+}
+
 // Aggregates used by the analysis page
 function computeAnalysis(sessions, preferredRatio, rate) {
   return sessions.map(s => {
