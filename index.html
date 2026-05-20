@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keiko</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo"><span>🥷</span> Keiko</div>
+  <a class="nav-link active" href="index.html"><span class="nav-icon">📊</span> Dashboard</a>
+  <a class="nav-link" href="log.html"><span class="nav-icon">✏️</span> Log Session</a>
+  <a class="nav-link" href="analysis.html"><span class="nav-icon">💰</span> Cost Analysis</a>
+</nav>
+
+<main class="main">
+  <div class="page-title">Dashboard</div>
+  <div class="page-sub" id="today-date">Loading…</div>
+
+  <!-- Today's snapshot -->
+  <div class="stat-grid" id="stat-grid">
+    <div class="stat-card"><div class="stat-label">Today — Kids</div><div class="stat-value purple" id="stat-kids">—</div><div class="stat-sub" id="stat-school"></div></div>
+    <div class="stat-card"><div class="stat-label">Today — Senseis</div><div class="stat-value purple" id="stat-senseis">—</div></div>
+    <div class="stat-card"><div class="stat-label">Actual Ratio</div><div class="stat-value" id="stat-ratio">—</div><div class="stat-sub">kids per sensei</div></div>
+    <div class="stat-card"><div class="stat-label">Preferred Ratio</div><div class="stat-value" id="stat-preferred">1 : <span id="pref-n">4</span></div><div class="stat-sub">1 sensei per N kids</div></div>
+    <div class="stat-card"><div class="stat-label">Today's Weather</div><div class="stat-value" id="stat-weather-icon" style="font-size:2.2rem">—</div><div class="stat-sub" id="stat-weather-desc"></div></div>
+    <div class="stat-card"><div class="stat-label">Sessions Logged</div><div class="stat-value purple" id="stat-total">—</div><div class="stat-sub">all time</div></div>
+  </div>
+
+  <div class="two-col" style="margin-bottom:1.25rem">
+    <!-- Attendance trend -->
+    <div class="card">
+      <div class="card-title">Attendance — last 30 days</div>
+      <div class="chart-wrap"><canvas id="chart-attendance"></canvas></div>
+    </div>
+    <!-- Ratio vs preferred -->
+    <div class="card">
+      <div class="card-title">Kids-per-sensei ratio</div>
+      <div class="chart-wrap"><canvas id="chart-ratio"></canvas></div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <!-- Recent sessions table -->
+    <div class="card">
+      <div class="card-title">Recent sessions</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Slot</th><th>Kids</th><th>Senseis</th><th>Status</th></tr></thead>
+          <tbody id="recent-tbody"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:1.5rem">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Upcoming school events -->
+    <div class="card">
+      <div class="card-title">Upcoming school events (next 4 weeks)</div>
+      <div class="event-list" id="event-list"></div>
+    </div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/weather.js"></script>
+<script src="js/calendar.js"></script>
+<script>
+const today = new Date().toISOString().slice(0,10);
+document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+document.getElementById('pref-n').textContent = CONFIG.preferredRatio;
+
+async function init() {
+  // Weather
+  const w = await fetchWeather(CONFIG.latitude, CONFIG.longitude, today);
+  document.getElementById('stat-weather-icon').textContent = weatherIcon(w.code);
+  document.getElementById('stat-weather-desc').textContent = w.temp_f ? `${Math.round(w.temp_f)}°F — ${w.desc}` : w.desc;
+
+  // School context
+  const cal = SCHOOL_CALENDAR.getInfo(today);
+  const schoolEl = document.getElementById('stat-school');
+  const typeMap = { school:'school-day', holiday:'no-school', break:'no-school', summer:'summer', weekend:'weekend' };
+  schoolEl.innerHTML = `<span class="school-badge ${typeMap[cal.type]||'weekend'}">${cal.desc}</span>`;
+
+  // Sessions
+  const sessions = await getSessions({ limit: 50 });
+  document.getElementById('stat-total').textContent = sessions.length;
+
+  // Today
+  const todaySessions = sessions.filter(s => s.date === today);
+  if (todaySessions.length) {
+    const tot_kids    = todaySessions.reduce((a,s)=>a+s.kids_count, 0);
+    const tot_senseis = todaySessions.reduce((a,s)=>a+s.senseis_count, 0);
+    document.getElementById('stat-kids').textContent    = tot_kids;
+    document.getElementById('stat-senseis').textContent = tot_senseis;
+    const ratio = tot_senseis > 0 ? (tot_kids/tot_senseis).toFixed(1) : '—';
+    const ratioEl = document.getElementById('stat-ratio');
+    ratioEl.textContent = ratio;
+    if (ratio !== '—') {
+      ratioEl.className = 'stat-value ' + (ratio > CONFIG.preferredRatio ? 'red' : 'green');
+    }
+  } else {
+    document.getElementById('stat-kids').textContent = 'Not logged';
+    document.getElementById('stat-senseis').textContent = '—';
+  }
+
+  // Charts — last 30 days
+  const last30 = sessions.slice(0, 30).reverse();
+  const labels  = last30.map(s => s.date.slice(5));
+  const kids    = last30.map(s => s.kids_count);
+  const senseis = last30.map(s => s.senseis_count);
+  const ratios  = last30.map(s => s.senseis_count > 0 ? +(s.kids_count/s.senseis_count).toFixed(1) : 0);
+
+  new Chart(document.getElementById('chart-attendance'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Kids',    data: kids,    backgroundColor: 'rgba(108,62,245,.65)' },
+        { label: 'Senseis', data: senseis, backgroundColor: 'rgba(255,107,53,.65)' },
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
+  });
+
+  new Chart(document.getElementById('chart-ratio'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Actual ratio', data: ratios, borderColor: '#6C3EF5', backgroundColor: 'rgba(108,62,245,.1)', tension: .3, fill: true },
+        { label: `Preferred (1:${CONFIG.preferredRatio})`, data: last30.map(()=>CONFIG.preferredRatio), borderColor: '#22C55E', borderDash: [5,5], pointRadius: 0 },
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
+  });
+
+  // Recent table
+  const tbody = document.getElementById('recent-tbody');
+  if (!sessions.length) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:1.5rem">No sessions yet — <a href="log.html">log one</a></td></tr>'; return; }
+  tbody.innerHTML = sessions.slice(0,15).map(s => {
+    const needed  = Math.ceil(s.kids_count / CONFIG.preferredRatio);
+    const extra   = s.senseis_count - needed;
+    const status  = extra > 0 ? `<span class="badge badge-red">+${extra} over</span>`
+                  : extra < 0 ? `<span class="badge badge-amber">${-extra} short</span>`
+                  : `<span class="badge badge-green">perfect</span>`;
+    return `<tr>
+      <td>${s.date}</td>
+      <td>${s.time_slot}</td>
+      <td>${s.kids_count}</td>
+      <td>${s.senseis_count}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('');
+
+  // Upcoming school events
+  const events = SCHOOL_CALENDAR.getUpcoming(8);
+  const el = document.getElementById('event-list');
+  el.innerHTML = events.length
+    ? events.map(e => `<div class="event-item"><span class="event-date">${e.date}</span><span class="school-badge ${e.type==='summer'?'summer':'no-school'}">${e.desc}</span></div>`).join('')
+    : '<div style="color:var(--muted);font-size:.85rem">No upcoming breaks in the next 4 weeks.</div>';
+}
+
+init().catch(err => {
+  console.error(err);
+  const t = document.getElementById('toast');
+  t.textContent = 'Could not load data — check config.js';
+  t.className = 'show';
+  setTimeout(()=>t.className='',4000);
+});
+</script>
+</body>
+</html>

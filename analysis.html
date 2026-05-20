@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cost Analysis — Keiko</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo"><span>🥷</span> Keiko</div>
+  <a class="nav-link" href="index.html"><span class="nav-icon">📊</span> Dashboard</a>
+  <a class="nav-link" href="log.html"><span class="nav-icon">✏️</span> Log Session</a>
+  <a class="nav-link active" href="analysis.html"><span class="nav-icon">💰</span> Cost Analysis</a>
+</nav>
+
+<main class="main">
+  <div class="page-title">Cost Analysis</div>
+  <div class="page-sub">How much would have been saved if staffing matched the model's preferred ratio?</div>
+
+  <!-- Controls -->
+  <div class="controls-bar">
+    <div>
+      <label style="font-size:.8rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.25rem">From</label>
+      <input type="date" id="ctrl-from">
+    </div>
+    <div>
+      <label style="font-size:.8rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.25rem">To</label>
+      <input type="date" id="ctrl-to">
+    </div>
+    <div>
+      <label style="font-size:.8rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.25rem">Preferred ratio — 1 sensei per <span id="ratio-val">4</span> kids</label>
+      <input type="range" id="ctrl-ratio" min="2" max="8" value="4" style="width:160px">
+    </div>
+    <button class="btn btn-primary" id="run-btn">Run analysis</button>
+  </div>
+
+  <!-- Summary stats -->
+  <div class="stat-grid" id="sum-grid" style="margin-bottom:1.5rem">
+    <div class="stat-card"><div class="stat-label">Total wasted $</div><div class="stat-value red" id="sum-waste">—</div><div class="stat-sub">overstaffing cost</div></div>
+    <div class="stat-card"><div class="stat-label">Sessions analysed</div><div class="stat-value purple" id="sum-sessions">—</div></div>
+    <div class="stat-card"><div class="stat-label">Avg kids / session</div><div class="stat-value" id="sum-avg-kids">—</div></div>
+    <div class="stat-card"><div class="stat-label">Avg senseis / session</div><div class="stat-value" id="sum-avg-senseis">—</div></div>
+    <div class="stat-card"><div class="stat-label">Overstaffed sessions</div><div class="stat-value red" id="sum-over">—</div></div>
+    <div class="stat-card"><div class="stat-label">Understaffed sessions</div><div class="stat-value amber" id="sum-under">—</div></div>
+  </div>
+
+  <!-- Charts row -->
+  <div class="two-col" style="margin-bottom:1.25rem">
+    <div class="card">
+      <div class="card-title">Cumulative wasted $ over time</div>
+      <div class="chart-wrap"><canvas id="chart-cumulative"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Waste breakdown — by day of week</div>
+      <div class="chart-wrap"><canvas id="chart-dow"></canvas></div>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-bottom:1.25rem">
+    <div class="card">
+      <div class="card-title">School day vs. non-school day attendance</div>
+      <div class="chart-wrap"><canvas id="chart-school"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Avg kids by month</div>
+      <div class="chart-wrap"><canvas id="chart-month"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Session table -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+      <div class="card-title" style="margin:0">Session detail</div>
+      <button class="btn btn-outline btn-sm" id="export-btn">Export CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table id="detail-table">
+        <thead>
+          <tr>
+            <th>Date</th><th>Slot</th><th>School?</th><th>Weather</th>
+            <th>Kids</th><th>Senseis</th><th>Needed</th><th>Extra</th>
+            <th>Wasted $</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="detail-tbody">
+          <tr><td colspan="10" style="text-align:center;color:var(--muted);padding:2rem">Run the analysis above to see results.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/weather.js"></script>
+<script src="js/calendar.js"></script>
+<script>
+// ── Default date range: last 90 days ────────────────────────────────────────
+const toDate   = new Date().toISOString().slice(0,10);
+const fromDate = new Date(Date.now() - 90*86400000).toISOString().slice(0,10);
+document.getElementById('ctrl-from').value = fromDate;
+document.getElementById('ctrl-to').value   = toDate;
+document.getElementById('ctrl-ratio').value = CONFIG.preferredRatio;
+document.getElementById('ratio-val').textContent = CONFIG.preferredRatio;
+
+document.getElementById('ctrl-ratio').addEventListener('input', e => {
+  document.getElementById('ratio-val').textContent = e.target.value;
+});
+
+// ── Chart instances (so we can destroy before re-creating) ───────────────────
+let charts = {};
+function destroyCharts() { Object.values(charts).forEach(c => c?.destroy()); charts = {}; }
+
+// ── Run ──────────────────────────────────────────────────────────────────────
+async function runAnalysis() {
+  const from  = document.getElementById('ctrl-from').value;
+  const to    = document.getElementById('ctrl-to').value;
+  const ratio = +document.getElementById('ctrl-ratio').value;
+  const rate  = CONFIG.senseiHourlyRate;
+
+  document.getElementById('run-btn').textContent = 'Loading…';
+  const raw = await getSessions({ from, to });
+  document.getElementById('run-btn').textContent = 'Run analysis';
+
+  if (!raw.length) {
+    toast('No sessions in that range.');
+    return;
+  }
+
+  const sessions = computeAnalysis(raw, ratio, rate).reverse(); // chronological
+  const stats    = summaryStats(sessions);
+
+  // Summary cards
+  document.getElementById('sum-waste').textContent    = `$${stats.totalWaste.toFixed(2)}`;
+  document.getElementById('sum-sessions').textContent = stats.total;
+  document.getElementById('sum-avg-kids').textContent = stats.avgKids.toFixed(1);
+  document.getElementById('sum-avg-senseis').textContent = stats.avgSenseis.toFixed(1);
+  document.getElementById('sum-over').textContent     = stats.overstaffed;
+  document.getElementById('sum-under').textContent    = stats.understaffed;
+
+  destroyCharts();
+
+  // ── Cumulative waste ───────────────────────────────────────────────────────
+  let cum = 0;
+  const cumData = sessions.map(s => { cum += s.waste; return +cum.toFixed(2); });
+  charts.cumulative = new Chart(document.getElementById('chart-cumulative'), {
+    type: 'line',
+    data: {
+      labels: sessions.map(s => s.date.slice(5)),
+      datasets: [{ label: 'Cumulative wasted $', data: cumData, borderColor: '#EF4444', backgroundColor: 'rgba(239,68,68,.1)', fill: true, tension: .3 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$'+v } } } }
+  });
+
+  // ── Day of week ───────────────────────────────────────────────────────────
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dowWaste = Array(7).fill(0);
+  const dowCount = Array(7).fill(0);
+  sessions.forEach(s => {
+    const d = new Date(s.date + 'T12:00:00').getDay();
+    dowWaste[d] += s.waste;
+    dowCount[d]++;
+  });
+  charts.dow = new Chart(document.getElementById('chart-dow'), {
+    type: 'bar',
+    data: {
+      labels: DAYS,
+      datasets: [{ label: 'Total wasted $', data: dowWaste.map(v=>+v.toFixed(2)), backgroundColor: 'rgba(108,62,245,.7)' }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$'+v } } } }
+  });
+
+  // ── School vs non-school ──────────────────────────────────────────────────
+  const school    = sessions.filter(s => s.is_school_day);
+  const noSchool  = sessions.filter(s => !s.is_school_day);
+  const avgKidsSchool   = school.length   ? school.reduce((a,s)=>a+s.kids_count,0)/school.length   : 0;
+  const avgKidsNoSchool = noSchool.length ? noSchool.reduce((a,s)=>a+s.kids_count,0)/noSchool.length : 0;
+  charts.school = new Chart(document.getElementById('chart-school'), {
+    type: 'bar',
+    data: {
+      labels: ['School days', 'Non-school days'],
+      datasets: [{ data: [+avgKidsSchool.toFixed(1), +avgKidsNoSchool.toFixed(1)], backgroundColor: ['rgba(108,62,245,.7)', 'rgba(34,197,94,.7)'] }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Avg kids' } } } }
+  });
+
+  // ── Month breakdown ───────────────────────────────────────────────────────
+  const monthMap = {};
+  sessions.forEach(s => {
+    const m = s.date.slice(0,7);
+    if (!monthMap[m]) monthMap[m] = { kids: 0, n: 0 };
+    monthMap[m].kids += s.kids_count;
+    monthMap[m].n++;
+  });
+  const mLabels = Object.keys(monthMap).sort();
+  const mData   = mLabels.map(m => +(monthMap[m].kids/monthMap[m].n).toFixed(1));
+  charts.month = new Chart(document.getElementById('chart-month'), {
+    type: 'bar',
+    data: {
+      labels: mLabels,
+      datasets: [{ data: mData, backgroundColor: 'rgba(255,107,53,.7)' }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Avg kids' } } } }
+  });
+
+  // ── Detail table ──────────────────────────────────────────────────────────
+  const tbody = document.getElementById('detail-tbody');
+  tbody.innerHTML = sessions.map(s => {
+    const status = s.extra > 0  ? `<span class="badge badge-red">+${s.extra} over</span>`
+                 : s.shortage > 0 ? `<span class="badge badge-amber">${s.shortage} short</span>`
+                 : `<span class="badge badge-green">ok</span>`;
+    const schoolB = s.is_school_day ? '<span class="badge badge-purple">school</span>' : '<span class="badge badge-green">off</span>';
+    return `<tr>
+      <td>${s.date}</td>
+      <td>${s.time_slot}</td>
+      <td>${schoolB}</td>
+      <td title="${s.weather_desc||''}">${s.weather_code!=null?weatherIcon(s.weather_code):'—'} ${s.weather_temp_f?Math.round(s.weather_temp_f)+'°F':''}</td>
+      <td>${s.kids_count}</td>
+      <td>${s.senseis_count}</td>
+      <td>${s.needed}</td>
+      <td>${s.extra > 0 ? '+'+s.extra : s.extra < 0 ? s.extra : '0'}</td>
+      <td style="color:${s.waste>0?'var(--red)':'var(--green)'}">${s.waste>0?'$'+s.waste.toFixed(2):'—'}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('');
+
+  // Store for CSV export
+  window._analysisData = sessions;
+}
+
+// ── CSV export ────────────────────────────────────────────────────────────────
+document.getElementById('export-btn').addEventListener('click', () => {
+  if (!window._analysisData?.length) { toast('Run analysis first.'); return; }
+  const headers = 'date,time_slot,is_school_day,kids,senseis,needed,extra,waste_usd,weather,temp_f,notes';
+  const rows = window._analysisData.map(s =>
+    [s.date,s.time_slot,s.is_school_day,s.kids_count,s.senseis_count,s.needed,s.extra,s.waste.toFixed(2),s.weather_desc||'',s.weather_temp_f||'',s.notes||''].join(',')
+  );
+  const blob = new Blob([[headers,...rows].join('\n')], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `codeninjas_analysis_${document.getElementById('ctrl-from').value}_${document.getElementById('ctrl-to').value}.csv`;
+  a.click();
+});
+
+document.getElementById('run-btn').addEventListener('click', runAnalysis);
+runAnalysis(); // auto-run on load
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show';
+  setTimeout(() => t.className = '', 3000);
+}
+</script>
+</body>
+</html>

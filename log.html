@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log Session — Keiko</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo"><span>🥷</span> Keiko</div>
+  <a class="nav-link" href="index.html"><span class="nav-icon">📊</span> Dashboard</a>
+  <a class="nav-link active" href="log.html"><span class="nav-icon">✏️</span> Log Session</a>
+  <a class="nav-link" href="analysis.html"><span class="nav-icon">💰</span> Cost Analysis</a>
+</nav>
+
+<main class="main">
+  <div class="page-title">Log a Session</div>
+  <div class="page-sub">Record attendance for one time block. Log multiple entries per day if needed.</div>
+
+  <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:1.25rem;align-items:start">
+
+    <!-- Form -->
+    <div class="card">
+      <form id="log-form">
+        <div class="form-grid" style="margin-bottom:1rem">
+
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="f-date" required>
+          </div>
+          <div class="form-group">
+            <label>Time slot</label>
+            <select id="f-slot">
+              <option value="morning">Morning (before noon)</option>
+              <option value="afternoon" selected>Afternoon (12–5 pm)</option>
+              <option value="evening">Evening (5 pm+)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Kids present</label>
+            <input type="number" id="f-kids" min="0" max="100" placeholder="0" required>
+          </div>
+          <div class="form-group">
+            <label>Coding Senseis working</label>
+            <input type="number" id="f-senseis" min="0" max="20" placeholder="0" required>
+          </div>
+
+          <div class="form-group">
+            <label>Session duration (hours)</label>
+            <input type="number" id="f-duration" min="0.5" max="8" step="0.5" value="1.5">
+          </div>
+          <div class="form-group">
+            <label>Commute difficulty
+              <span class="form-hint">— 1 easy, 5 bad weather/traffic</span>
+            </label>
+            <div class="star-row" id="star-row">
+              <span data-v="1">⭐</span><span data-v="2">⭐</span><span data-v="3">⭐</span>
+              <span data-v="4">⭐</span><span data-v="5">⭐</span>
+            </div>
+            <input type="hidden" id="f-commute" value="">
+          </div>
+
+        </div>
+
+        <div class="form-group" style="margin-bottom:1.25rem">
+          <label>Notes (optional)</label>
+          <textarea id="f-notes" rows="2" style="resize:vertical;padding:.6rem .75rem;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:.9rem"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="submit-btn">Save Session</button>
+      </form>
+    </div>
+
+    <!-- Auto-filled context panel -->
+    <div style="display:flex;flex-direction:column;gap:1rem">
+      <div class="card">
+        <div class="card-title">Auto-detected context</div>
+        <div style="display:flex;flex-direction:column;gap:.75rem;font-size:.875rem">
+          <div><span style="color:var(--muted);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em">School status</span><br>
+            <span id="ctx-school">—</span></div>
+          <div><span style="color:var(--muted);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Weather</span><br>
+            <span id="ctx-weather">Loading…</span></div>
+          <div><span style="color:var(--muted);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Precipitation forecast</span><br>
+            <span id="ctx-precip">—</span></div>
+        </div>
+      </div>
+
+      <div class="card" id="ratio-preview">
+        <div class="card-title">Staffing preview</div>
+        <div id="ratio-body" style="font-size:.875rem;color:var(--muted)">Enter kids + senseis to see analysis.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Previous logs for this date -->
+  <div class="card" style="margin-top:1.25rem" id="prev-card">
+    <div class="card-title">Other entries for this date</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Slot</th><th>Kids</th><th>Senseis</th><th>Duration</th><th>Notes</th><th></th></tr></thead>
+        <tbody id="prev-tbody"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:1rem">—</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/weather.js"></script>
+<script src="js/calendar.js"></script>
+<script>
+// ── Date init ────────────────────────────────────────────────────────────────
+const fDate = document.getElementById('f-date');
+fDate.value = new Date().toISOString().slice(0,10);
+
+// ── Star rating ──────────────────────────────────────────────────────────────
+const stars = document.querySelectorAll('#star-row span');
+let commuteVal = 0;
+stars.forEach(s => {
+  s.addEventListener('click', () => {
+    commuteVal = +s.dataset.v;
+    document.getElementById('f-commute').value = commuteVal;
+    stars.forEach(x => x.classList.toggle('active', +x.dataset.v <= commuteVal));
+  });
+});
+
+// ── Context update on date change ────────────────────────────────────────────
+async function updateContext(dateStr) {
+  // School
+  const cal = SCHOOL_CALENDAR.getInfo(dateStr);
+  const typeMap = { school:'school-day', holiday:'no-school', break:'no-school', summer:'summer', weekend:'weekend' };
+  document.getElementById('ctx-school').innerHTML =
+    `<span class="school-badge ${typeMap[cal.type]||'weekend'}">${cal.desc}</span>`;
+
+  // Weather
+  document.getElementById('ctx-weather').textContent = 'Fetching…';
+  const w = await fetchWeather(CONFIG.latitude, CONFIG.longitude, dateStr);
+  document.getElementById('ctx-weather').textContent =
+    w.temp_f ? `${weatherIcon(w.code)} ${Math.round(w.temp_f)}°F — ${w.desc}` : `${weatherIcon(w.code)} ${w.desc}`;
+  document.getElementById('ctx-precip').textContent =
+    w.precip_mm != null ? `${w.precip_mm} mm` : '—';
+
+  // Store for form submission
+  fDate._weather = w;
+  fDate._cal     = cal;
+
+  // Previous entries
+  loadPrevious(dateStr);
+}
+
+fDate.addEventListener('change', () => updateContext(fDate.value));
+updateContext(fDate.value);
+
+// ── Staffing preview ─────────────────────────────────────────────────────────
+function updatePreview() {
+  const kids    = +document.getElementById('f-kids').value    || 0;
+  const senseis = +document.getElementById('f-senseis').value || 0;
+  const dur     = +document.getElementById('f-duration').value || CONFIG.defaultSessionHours;
+  if (!kids && !senseis) return;
+  const needed  = Math.ceil(kids / CONFIG.preferredRatio);
+  const extra   = senseis - needed;
+  const waste   = Math.max(0, extra) * CONFIG.senseiHourlyRate * dur;
+  const color   = extra > 0 ? 'var(--red)' : extra < 0 ? 'var(--amber)' : 'var(--green)';
+  const msg     = extra > 0
+    ? `<b style="color:var(--red)">Overstaffed by ${extra}</b> — $${waste.toFixed(2)} of unnecessary labor cost`
+    : extra < 0
+    ? `<b style="color:var(--amber)">Short by ${-extra} sensei(s)</b> — below preferred 1:${CONFIG.preferredRatio}`
+    : `<b style="color:var(--green)">Perfectly staffed</b> for a 1:${CONFIG.preferredRatio} ratio`;
+  document.getElementById('ratio-body').innerHTML =
+    `<div>${kids} kids ÷ ${CONFIG.preferredRatio} = <b>${needed}</b> senseis needed</div>
+     <div style="margin-top:.5rem">${msg}</div>`;
+}
+
+document.getElementById('f-kids').addEventListener('input', updatePreview);
+document.getElementById('f-senseis').addEventListener('input', updatePreview);
+
+// ── Previous entries for date ────────────────────────────────────────────────
+async function loadPrevious(dateStr) {
+  const rows = await getSessionByDate(dateStr);
+  const tbody = document.getElementById('prev-tbody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:1rem">None yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r =>
+    `<tr>
+      <td>${r.time_slot}</td>
+      <td>${r.kids_count}</td>
+      <td>${r.senseis_count}</td>
+      <td>${r.duration_hours}h</td>
+      <td style="color:var(--muted);font-size:.8rem">${r.notes||'—'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteRow(${r.id},'${dateStr}')">Delete</button></td>
+    </tr>`
+  ).join('');
+}
+
+async function deleteRow(id, dateStr) {
+  if (!confirm('Delete this entry?')) return;
+  await deleteSession(id);
+  loadPrevious(dateStr);
+  toast('Entry deleted');
+}
+
+// ── Form submit ──────────────────────────────────────────────────────────────
+document.getElementById('log-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  const w   = fDate._weather || {};
+  const cal = fDate._cal     || {};
+  const data = {
+    date:           fDate.value,
+    time_slot:      document.getElementById('f-slot').value,
+    kids_count:     +document.getElementById('f-kids').value,
+    senseis_count:  +document.getElementById('f-senseis').value,
+    duration_hours: +document.getElementById('f-duration').value,
+    commute_score:  commuteVal || null,
+    notes:          document.getElementById('f-notes').value || null,
+    weather_temp_f: w.temp_f   ?? null,
+    weather_code:   w.code     ?? null,
+    weather_precip: w.precip_mm ?? null,
+    weather_desc:   w.desc     ?? null,
+    is_school_day:  cal.type === 'school',
+    school_event:   cal.desc   ?? null,
+  };
+
+  try {
+    await logSession(data);
+    toast('Session saved ✓');
+    document.getElementById('log-form').reset();
+    fDate.value = new Date().toISOString().slice(0,10);
+    commuteVal = 0;
+    stars.forEach(s => s.classList.remove('active'));
+    updateContext(fDate.value);
+    document.getElementById('ratio-body').textContent = 'Enter kids + senseis to see analysis.';
+  } catch(err) {
+    toast('Error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Session';
+  }
+});
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show';
+  setTimeout(() => t.className = '', 3000);
+}
+</script>
+</body>
+</html>
