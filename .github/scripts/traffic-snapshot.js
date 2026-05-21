@@ -48,8 +48,11 @@ async function supabase(method, path, body) {
 }
 
 async function snapshotExists(date) {
-  const data = await supabase('GET', `traffic_snapshots?date=eq.${date}&select=id`);
-  return Array.isArray(data) && data.length > 0;
+  const data = await supabase('GET', `traffic_snapshots?date=eq.${date}&select=id,captured_at`);
+  if (!Array.isArray(data) || !data.length) return false;
+  // Allow overwrite if existing snapshot is more than 4 hours old (e.g., a manual test run earlier in the day)
+  const hoursAgo = (Date.now() - new Date(data[0].captured_at)) / 3_600_000;
+  return hoursAgo < 4;
 }
 
 async function fetchTraffic() {

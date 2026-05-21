@@ -96,7 +96,7 @@ document.getElementById('log-sub').textContent =
   new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
 // ── Context + previous entries ────────────────────────────────────────────────
-let _weather = {}, _cal = {}, _traffic = null;
+let _weather = {}, _cal = {}, _traffic = null, _existingSession = null;
 
 async function init() {
   // Session time for today
@@ -145,12 +145,30 @@ async function init() {
   // Check if today already has an entry
   const existing = await getSessionByDate(today);
   if (existing.length) {
-    const e = existing[0];
-    const banner = document.getElementById('already-logged');
-    banner.style.display = 'block';
-    banner.innerHTML = `✅ Already logged by <b>${e.reporter}</b> — ${e.kids_count} kids, ${e.senseis_count} senseis.`;
-    document.getElementById('log-form').querySelectorAll('input,button').forEach(el => el.disabled = true);
+    _existingSession = existing[0];
+    showAlreadyLoggedBanner(_existingSession);
   }
+}
+
+function showAlreadyLoggedBanner(e) {
+  const banner = document.getElementById('already-logged');
+  banner.style.display = 'block';
+  banner.style.background = '#F1F5F9';
+  banner.innerHTML = `✅ Already logged by <b>${e.reporter}</b> — ${e.kids_count} kids, ${e.senseis_count} senseis. <button type="button" id="incorrect-btn" style="margin-left:.75rem;font-size:.82rem;background:none;border:none;color:var(--muted);cursor:pointer;text-decoration:underline;padding:0">This is incorrect</button>`;
+  document.getElementById('log-form').querySelectorAll('input,button').forEach(el => el.disabled = true);
+  document.getElementById('incorrect-btn').addEventListener('click', enterCorrectionMode);
+}
+
+function enterCorrectionMode() {
+  const e = _existingSession;
+  document.getElementById('f-reporter').value = e.reporter;
+  document.getElementById('f-kids').value = e.kids_count;
+  document.getElementById('f-senseis').value = e.senseis_count;
+  document.getElementById('log-form').querySelectorAll('input,button').forEach(el => el.disabled = false);
+  const banner = document.getElementById('already-logged');
+  banner.style.background = '#FEF3C7';
+  banner.innerHTML = `⚠️ Correcting entry by <b>${e.reporter}</b>. Update the values and save.`;
+  document.getElementById('submit-btn').textContent = 'Save Correction';
 }
 
 // ── Form submit ───────────────────────────────────────────────────────────────
@@ -210,11 +228,16 @@ document.getElementById('log-form').addEventListener('submit', async e => {
   };
 
   try {
-    await logSession(data);
-    toast('Session saved ✓');
-    // Lock the form — one entry per day
+    if (_existingSession) {
+      await updateSession(_existingSession.id, data);
+      toast('Correction saved ✓');
+    } else {
+      await logSession(data);
+      toast('Session saved ✓');
+    }
     const banner = document.getElementById('already-logged');
     banner.style.display = 'block';
+    banner.style.background = '#F1F5F9';
     banner.innerHTML = `✅ Logged by <b>${data.reporter}</b> — ${data.kids_count} kids, ${data.senseis_count} senseis.`;
     document.getElementById('log-form').querySelectorAll('input,button').forEach(el => el.disabled = true);
   } catch(err) {
