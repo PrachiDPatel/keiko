@@ -82,12 +82,14 @@ async function getTrafficSnapshot(dateStr) {
 // Aggregates used by the analysis page
 function computeAnalysis(sessions, preferredRatio, rate) {
   return sessions.map(s => {
+    const interns  = s.interns_count ?? 0;
     const needed   = Math.ceil(s.kids_count / preferredRatio);
     const extra    = Math.max(0, s.senseis_count - needed);
     const shortage = Math.max(0, needed - s.senseis_count);
     const waste    = extra * rate * s.duration_hours;
-    const actualRatio = s.senseis_count > 0 ? (s.kids_count / s.senseis_count).toFixed(1) : '—';
-    return { ...s, needed, extra, shortage, waste, actualRatio };
+    const totalStaff = s.senseis_count + interns;
+    const actualRatio = totalStaff > 0 ? (s.kids_count / totalStaff).toFixed(1) : '—';
+    return { ...s, interns_count: interns, needed, extra, shortage, waste, totalStaff, actualRatio };
   });
 }
 
@@ -95,7 +97,8 @@ function summaryStats(analysed) {
   const totalWaste    = analysed.reduce((a, s) => a + s.waste, 0);
   const avgKids       = analysed.length ? analysed.reduce((a,s)=>a+s.kids_count,0)/analysed.length : 0;
   const avgSenseis    = analysed.length ? analysed.reduce((a,s)=>a+s.senseis_count,0)/analysed.length : 0;
+  const avgInterns    = analysed.length ? analysed.reduce((a,s)=>a+s.interns_count,0)/analysed.length : 0;
   const overstaffed   = analysed.filter(s => s.extra > 0).length;
   const understaffed  = analysed.filter(s => s.shortage > 0).length;
-  return { totalWaste, avgKids, avgSenseis, overstaffed, understaffed, total: analysed.length };
+  return { totalWaste, avgKids, avgSenseis, avgInterns, overstaffed, understaffed, total: analysed.length };
 }

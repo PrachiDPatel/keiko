@@ -195,6 +195,7 @@ tr:hover td { background: rgba(59,130,246,.035); }
 
 /* ── Forms ───────────────────────────────────────────────── */
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-grid.three-up { grid-template-columns: 1fr 1fr 1fr; }
 .form-group { display: flex; flex-direction: column; gap: .45rem; }
 .form-group label { font-size: .8rem; font-weight: 600; color: var(--text); }
 .form-group input, .form-group select, .form-group textarea {
@@ -210,6 +211,7 @@ tr:hover td { background: rgba(59,130,246,.035); }
   box-shadow: 0 0 0 4px rgba(59,130,246,.1);
   background: #fff;
 }
+.form-group input::placeholder { color: #CBD5E1; }
 .form-hint { font-size: .75rem; color: var(--muted); }
 .star-row { display: flex; gap: .35rem; font-size: 1.4rem; cursor: pointer; }
 .star-row span { opacity: .3; transition: opacity .1s; }

@@ -27,7 +27,7 @@
       <div id="too-early" style="display:none;padding:.75rem 1rem;border-radius:8px;background:#FEF3C7;font-size:.9rem;margin-bottom:1rem"></div>
       <div id="already-logged" style="display:none;padding:.75rem 1rem;border-radius:8px;background:#F1F5F9;font-size:.9rem;margin-bottom:1rem"></div>
       <form id="log-form">
-        <div class="form-grid" style="margin-bottom:1.25rem">
+        <div class="form-grid three-up" style="margin-bottom:1.25rem">
 
           <div class="form-group" style="grid-column:1/-1">
             <label>Reporter</label>
@@ -41,6 +41,10 @@
           <div class="form-group">
             <label>Coding Senseis working</label>
             <input type="number" id="f-senseis" min="2" max="20" placeholder="2" required>
+          </div>
+          <div class="form-group">
+            <label>Interns</label>
+            <input type="number" id="f-interns" min="0" max="20" placeholder="0">
           </div>
 
         </div>
@@ -174,7 +178,8 @@ function showAlreadyLoggedBanner(e) {
   const banner = document.getElementById('already-logged');
   banner.style.display = 'block';
   banner.style.background = '#F1F5F9';
-  banner.innerHTML = `✅ Already logged by <b>${e.reporter}</b> — ${e.kids_count} kids, ${e.senseis_count} senseis. <button type="button" id="incorrect-btn" style="margin-left:.75rem;font-size:.82rem;background:none;border:none;color:var(--muted);cursor:pointer;text-decoration:underline;padding:0">This is incorrect</button>`;
+  const internNote = e.interns_count > 0 ? `, ${e.interns_count} intern${e.interns_count !== 1 ? 's' : ''}` : '';
+  banner.innerHTML = `✅ Already logged by <b>${e.reporter}</b> — ${e.kids_count} kids, ${e.senseis_count} senseis${internNote}. <button type="button" id="incorrect-btn" style="margin-left:.75rem;font-size:.82rem;background:none;border:none;color:var(--muted);cursor:pointer;text-decoration:underline;padding:0">This is incorrect</button>`;
   document.getElementById('log-form').querySelectorAll('input,button').forEach(el => el.disabled = true);
   document.getElementById('incorrect-btn').addEventListener('click', enterCorrectionMode);
 }
@@ -184,6 +189,7 @@ function enterCorrectionMode() {
   document.getElementById('f-reporter').value = e.reporter;
   document.getElementById('f-kids').value = e.kids_count;
   document.getElementById('f-senseis').value = e.senseis_count;
+  document.getElementById('f-interns').value = e.interns_count ?? 0;
   document.getElementById('log-form').querySelectorAll('input,button').forEach(el => el.disabled = false);
   const banner = document.getElementById('already-logged');
   banner.style.background = '#FEF3C7';
@@ -232,6 +238,7 @@ document.getElementById('log-form').addEventListener('submit', async e => {
     time_slot:      sessionTimeForDate(today) || 'unscheduled',
     kids_count:     +document.getElementById('f-kids').value,
     senseis_count:  +document.getElementById('f-senseis').value,
+    interns_count:  +document.getElementById('f-interns').value || 0,
     duration_hours: CONFIG.defaultSessionHours,
     weather_temp_f: _weather.temp_f    ?? null,
     weather_code:   _weather.code      ?? null,

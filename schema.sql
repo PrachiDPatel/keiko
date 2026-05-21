@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   time_slot       TEXT        NOT NULL DEFAULT 'afternoon',  -- morning | afternoon | evening (auto-detected)
   kids_count      INTEGER     NOT NULL CHECK (kids_count >= 0),
   senseis_count   INTEGER     NOT NULL CHECK (senseis_count >= 0),
+  interns_count   INTEGER     NOT NULL DEFAULT 0 CHECK (interns_count >= 0),
   duration_hours  NUMERIC(4,2) NOT NULL DEFAULT 1.5,         -- auto from config
   -- weather (auto-filled from Open-Meteo)
   weather_temp_f  NUMERIC(5,1),
@@ -64,6 +65,9 @@ ALTER TABLE sessions ADD COLUMN IF NOT EXISTS traffic_captured_at TIMESTAMPTZ;
 -- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS week_of_school_year SMALLINT;
 -- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS prev_session_kids SMALLINT;
 -- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS day_of_week SMALLINT;
+
+-- ── Add interns_count to sessions (run once) ─────────────────────────────────
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS interns_count INTEGER NOT NULL DEFAULT 0 CHECK (interns_count >= 0);
 
 -- ── Add weather + school context to traffic_snapshots (run once) ─────────────
 ALTER TABLE traffic_snapshots ADD COLUMN IF NOT EXISTS weather_temp_f  NUMERIC(5,1);

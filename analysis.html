@@ -154,6 +154,7 @@
     <div class="hero-card purple"><div class="hero-label">Sessions analysed</div><div class="hero-value purple" id="sum-sessions">—</div></div>
     <div class="hero-card blue"><div class="hero-label">Avg kids / session</div><div class="hero-value" id="sum-avg-kids" style="color:#3B82F6">—</div></div>
     <div class="hero-card orange"><div class="hero-label">Avg senseis / session</div><div class="hero-value" id="sum-avg-senseis" style="color:var(--orange)">—</div></div>
+    <div class="hero-card green"><div class="hero-label">Avg interns / session</div><div class="hero-value" id="sum-avg-interns" style="color:var(--green)">—</div></div>
     <div class="hero-card red"><div class="hero-label">Overstaffed sessions</div><div class="hero-value red" id="sum-over">—</div></div>
     <div class="hero-card amber"><div class="hero-label">Understaffed sessions</div><div class="hero-value amber" id="sum-under">—</div></div>
   </div>
@@ -237,12 +238,12 @@
           <thead>
             <tr>
               <th>Date</th><th>Day</th><th>Wk#</th><th>School?</th><th>Weather</th><th>Traffic</th>
-              <th>Kids</th><th>Prev</th><th>Senseis</th><th>Needed</th><th>Extra</th>
+              <th>Kids</th><th>Prev</th><th>Senseis</th><th>Interns</th><th>Needed</th><th>Extra</th>
               <th>Wasted $</th><th><span title="Perfect = right staffing. Over = too many senseis. Short = not enough.">Status ⓘ</span></th>
             </tr>
           </thead>
           <tbody id="detail-tbody">
-            <tr><td colspan="13" style="text-align:center;color:var(--muted);padding:2rem">Run the analysis above to see results.</td></tr>
+            <tr><td colspan="14" style="text-align:center;color:var(--muted);padding:2rem">Run the analysis above to see results.</td></tr>
           </tbody>
         </table>
       </div>
@@ -424,6 +425,7 @@ async function runAnalysis() {
   document.getElementById('sum-sessions').textContent     = stats.total;
   document.getElementById('sum-avg-kids').textContent     = stats.avgKids.toFixed(1);
   document.getElementById('sum-avg-senseis').textContent  = stats.avgSenseis.toFixed(1);
+  document.getElementById('sum-avg-interns').textContent  = stats.avgInterns.toFixed(1);
   document.getElementById('sum-over').textContent         = stats.overstaffed;
   document.getElementById('sum-under').textContent        = stats.understaffed;
 
@@ -500,6 +502,7 @@ async function runAnalysis() {
     [
       { label: 'Kids', data: sessions.map(s=>s.kids_count), borderColor: '#6C3EF5', backgroundColor: 'rgba(108,62,245,.08)', tension: .35, fill: true },
       { label: 'Senseis', data: sessions.map(s=>s.senseis_count), borderColor: '#FF6B35', backgroundColor: 'rgba(255,107,53,.08)', tension: .35, fill: false },
+      { label: 'Interns', data: sessions.map(s=>s.interns_count), borderColor: '#22C55E', backgroundColor: 'rgba(34,197,94,.08)', tension: .35, fill: false, borderDash: [4,3] },
     ],
     { plugins: { legend: { display: true, position: 'bottom' } } }
   );
@@ -655,6 +658,7 @@ async function runAnalysis() {
       <td><b>${s.kids_count}</b></td>
       <td style="color:var(--muted)">${s.prev_session_kids ?? '—'}</td>
       <td>${s.senseis_count}</td>
+      <td style="color:var(--green)">${s.interns_count > 0 ? s.interns_count : '—'}</td>
       <td>${s.needed}</td>
       <td>${s.extra > 0 ? '+'+s.extra : s.extra < 0 ? s.extra : '0'}</td>
       <td style="color:${s.waste>0?'var(--red)':'var(--green)'}">${s.waste>0?'$'+s.waste.toFixed(2):'—'}</td>
@@ -668,13 +672,13 @@ async function runAnalysis() {
 // ── CSV export ────────────────────────────────────────────────────────────────
 document.getElementById('export-btn').addEventListener('click', () => {
   if (!window._analysisData?.length) { toast('Run analysis first.'); return; }
-  const headers = 'date,day,week_of_school_year,is_school_day,school_event,weather,temp_f,traffic,kids,prev_kids,senseis,needed,extra,waste_usd';
+  const headers = 'date,day,week_of_school_year,is_school_day,school_event,weather,temp_f,traffic,kids,prev_kids,senseis,interns,needed,extra,waste_usd';
   const DAYS_ = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const rows = window._analysisData.map(s => [
     s.date, DAYS_[new Date(s.date+'T12:00:00').getDay()],
     s.week_of_school_year??'', s.is_school_day, `"${(s.school_event||'').replace(/"/g,'""')}"`,
     `"${(s.weather_desc||'').replace(/"/g,'""')}"`, s.weather_temp_f||'', s.traffic_congestion??'',
-    s.kids_count, s.prev_session_kids??'', s.senseis_count,
+    s.kids_count, s.prev_session_kids??'', s.senseis_count, s.interns_count,
     s.needed, s.extra, s.waste.toFixed(2),
   ].join(','));
   const blob = new Blob([[headers,...rows].join('\n')], {type:'text/csv'});
