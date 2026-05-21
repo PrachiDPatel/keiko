@@ -50,8 +50,8 @@ CREATE POLICY "allow_all" ON traffic_snapshots FOR ALL USING (true) WITH CHECK (
 -- ALTER TABLE sessions DROP COLUMN IF EXISTS notes;
 -- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS reporter TEXT NOT NULL DEFAULT '';
 -- ALTER TABLE sessions ADD CONSTRAINT sessions_date_unique UNIQUE (date);
--- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS traffic_congestion NUMERIC(3,2);
--- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS traffic_captured_at TIMESTAMPTZ;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS traffic_congestion NUMERIC(3,2);
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS traffic_captured_at TIMESTAMPTZ;
 -- (New) traffic_snapshots table: see CREATE TABLE above — run the full block
 
 -- ── Prediction columns (run once) ────────────────────────────────────────────
