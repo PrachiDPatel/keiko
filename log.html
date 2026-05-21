@@ -24,6 +24,7 @@
 
     <!-- Form -->
     <div class="card">
+      <div id="too-early" style="display:none;padding:.75rem 1rem;border-radius:8px;background:#FEF3C7;font-size:.9rem;margin-bottom:1rem"></div>
       <div id="already-logged" style="display:none;padding:.75rem 1rem;border-radius:8px;background:#F1F5F9;font-size:.9rem;margin-bottom:1rem"></div>
       <form id="log-form">
         <div class="form-grid" style="margin-bottom:1.25rem">
@@ -108,23 +109,25 @@ async function init() {
     timeEl.innerHTML = '<span style="color:var(--amber)">No session scheduled today</span>';
   }
 
-  const cal = SCHOOL_CALENDAR.getInfo(today);
+  _cal = SCHOOL_CALENDAR.getInfo(today);
   const typeMap = { school: 'school-day', holiday: 'no-school', break: 'no-school', summer: 'summer', weekend: 'weekend' };
   document.getElementById('ctx-school').innerHTML =
-    `<span class="school-badge ${typeMap[cal.type] || 'weekend'}">${cal.desc}</span>`;
+    `<span class="school-badge ${typeMap[_cal.type] || 'weekend'}">${_cal.desc}</span>`;
 
-  const w = await fetchWeather(CONFIG.latitude, CONFIG.longitude, today);
-  document.getElementById('ctx-weather').textContent =
-    w.temp_f ? `${weatherIcon(w.code)} ${Math.round(w.temp_f)}°F — ${w.desc}` : `${weatherIcon(w.code)} ${w.desc}`;
-  document.getElementById('ctx-precip').textContent =
-    w.precip_mm != null ? `${w.precip_mm} mm` : '—';
-
-  _weather = w;
-  _cal = cal;
-
-  // Traffic — prefer session-time snapshot (captured by GitHub Actions), fall back to real-time
-  const trafficEl = document.getElementById('ctx-traffic');
+  // Snapshot has session-time weather + traffic — prefer it over a live fetch
   const snap = await getTrafficSnapshot(today);
+  const trafficEl = document.getElementById('ctx-traffic');
+
+  if (snap?.weather_code != null) {
+    _weather = { temp_f: snap.weather_temp_f, code: snap.weather_code, precip_mm: snap.weather_precip, desc: snap.weather_desc };
+  } else {
+    _weather = await fetchWeather(CONFIG.latitude, CONFIG.longitude, today);
+  }
+  document.getElementById('ctx-weather').textContent =
+    _weather.temp_f ? `${weatherIcon(_weather.code)} ${Math.round(_weather.temp_f)}°F — ${_weather.desc}` : `${weatherIcon(_weather.code)} ${_weather.desc}`;
+  document.getElementById('ctx-precip').textContent =
+    _weather.precip_mm != null ? `${_weather.precip_mm} mm` : '—';
+
   if (snap) {
     _traffic = { congestion: snap.congestion, currentSpeed: snap.current_speed, capturedAt: snap.captured_at };
     trafficEl.textContent = `${trafficIcon(snap.congestion)} (${snap.current_speed} mph · session-time reading)`;
@@ -142,11 +145,28 @@ async function init() {
     }
   }
 
+  applyLoggingGate();
+
   // Check if today already has an entry
   const existing = await getSessionByDate(today);
   if (existing.length) {
     _existingSession = existing[0];
     showAlreadyLoggedBanner(_existingSession);
+  }
+}
+
+function applyLoggingGate() {
+  const opens = CONFIG.loggingOpens?.[new Date().getDay()];
+  if (!opens) return;
+  const [h, m] = opens.split(':').map(Number);
+  const unlock = new Date();
+  unlock.setHours(h, m, 0, 0);
+  if (new Date() < unlock) {
+    const label = unlock.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const banner = document.getElementById('too-early');
+    banner.style.display = 'block';
+    banner.innerHTML = `🕐 Logging opens at <b>${label}</b> — come back after the session.`;
+    document.getElementById('log-form').querySelectorAll('input,button').forEach(el => el.disabled = true);
   }
 }
 

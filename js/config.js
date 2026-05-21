@@ -20,4 +20,12 @@ const CONFIG = {
     4: '3:45 PM',   // Thursday
     6: '10:00 AM',  // Saturday
   },
+
+  // Earliest time logging is allowed each session day (24h, local time)
+  loggingOpens: {
+    2: '18:00',  // Tuesday
+    3: '18:00',  // Wednesday
+    4: '18:00',  // Thursday
+    6: '13:00',  // Saturday
+  },
 };

@@ -38,7 +38,13 @@ CREATE TABLE IF NOT EXISTS traffic_snapshots (
   congestion      NUMERIC(3,2),
   current_speed   NUMERIC(5,1),
   free_flow_speed NUMERIC(5,1),
-  captured_at     TIMESTAMPTZ DEFAULT NOW()
+  captured_at     TIMESTAMPTZ DEFAULT NOW(),
+  weather_temp_f  NUMERIC(5,1),
+  weather_code    INTEGER,
+  weather_precip  NUMERIC(6,2),
+  weather_desc    TEXT,
+  is_school_day   BOOLEAN,
+  school_event    TEXT
 );
 
 CREATE INDEX IF NOT EXISTS traffic_snapshots_date_idx ON traffic_snapshots(date);
@@ -58,3 +64,16 @@ ALTER TABLE sessions ADD COLUMN IF NOT EXISTS traffic_captured_at TIMESTAMPTZ;
 -- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS week_of_school_year SMALLINT;
 -- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS prev_session_kids SMALLINT;
 -- ALTER TABLE sessions ADD COLUMN IF NOT EXISTS day_of_week SMALLINT;
+
+-- ── Add weather + school context to traffic_snapshots (run once) ─────────────
+ALTER TABLE traffic_snapshots ADD COLUMN IF NOT EXISTS weather_temp_f  NUMERIC(5,1);
+ALTER TABLE traffic_snapshots ADD COLUMN IF NOT EXISTS weather_code    INTEGER;
+ALTER TABLE traffic_snapshots ADD COLUMN IF NOT EXISTS weather_precip  NUMERIC(6,2);
+ALTER TABLE traffic_snapshots ADD COLUMN IF NOT EXISTS weather_desc    TEXT;
+ALTER TABLE traffic_snapshots ADD COLUMN IF NOT EXISTS is_school_day   BOOLEAN;
+ALTER TABLE traffic_snapshots ADD COLUMN IF NOT EXISTS school_event    TEXT;
+
+-- ── Revert nullable sessions columns if previously applied (run once) ─────────
+ALTER TABLE sessions ALTER COLUMN reporter SET NOT NULL;
+ALTER TABLE sessions ALTER COLUMN kids_count SET NOT NULL;
+ALTER TABLE sessions ALTER COLUMN senseis_count SET NOT NULL;

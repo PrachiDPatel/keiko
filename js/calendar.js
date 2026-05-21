@@ -132,3 +132,5 @@ const SCHOOL_CALENDAR = (() => {
 
   return { getInfo, isSchoolDay, getUpcoming };
 })();
+
+if (typeof module !== 'undefined') module.exports = SCHOOL_CALENDAR;

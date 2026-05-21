@@ -1,7 +1,10 @@
 // Runs via GitHub Actions at session times (3:45 PM ET weekdays, 10 AM ET Saturday)
-// Captures TomTom traffic and stores in traffic_snapshots table.
-// The log form reads from this table — no matter when someone manually logs,
-// the traffic reflects actual conditions at session start.
+// Captures traffic + weather + school context → traffic_snapshots table.
+// The log form reads from this snapshot so session rows always reflect conditions at session start,
+// regardless of when the reporter actually fills in the counts.
+
+const path = require('path');
+const SCHOOL_CALENDAR = require(path.join(__dirname, '../../js/calendar.js'));
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
@@ -55,6 +58,26 @@ async function snapshotExists(date) {
   return hoursAgo < 4;
 }
 
+async function fetchWeather(date) {
+  const today = new Date().toISOString().slice(0, 10);
+  const isFuture = date > today;
+  const base = isFuture
+    ? 'https://api.open-meteo.com/v1/forecast'
+    : 'https://archive-api.open-meteo.com/v1/archive';
+  const url = `${base}?latitude=${LAT}&longitude=${LON}&daily=temperature_2m_max,precipitation_sum,weather_code&temperature_unit=fahrenheit&timezone=America%2FNew_York&start_date=${date}&end_date=${date}`;
+  try {
+    const res  = await fetch(url);
+    const json = await res.json();
+    const code   = json.daily?.weather_code?.[0]       ?? null;
+    const temp   = json.daily?.temperature_2m_max?.[0] ?? null;
+    const precip = json.daily?.precipitation_sum?.[0]  ?? null;
+    const WMO = { 0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',80:'Rain showers',81:'Showers',82:'Violent showers',95:'Thunderstorm',96:'Thunderstorm + hail',99:'Severe thunderstorm' };
+    return { temp_f: temp, code, precip_mm: precip, desc: WMO[code] ?? 'Unknown' };
+  } catch {
+    return { temp_f: null, code: null, precip_mm: null, desc: 'Unavailable' };
+  }
+}
+
 async function fetchTraffic() {
   if (!TOMTOM_KEY) return null;
   try {
@@ -88,23 +111,28 @@ async function main() {
     return;
   }
 
-  console.log(`Capturing traffic snapshot for ${et.date} (${sessionTime} session)...`);
-  const traffic = await fetchTraffic();
+  console.log(`Capturing session context for ${et.date} (${sessionTime} session)...`);
 
-  if (!traffic) {
-    console.log('No traffic data available — storing null snapshot as placeholder.');
-  }
+  const [traffic, weather] = await Promise.all([fetchTraffic(), fetchWeather(et.date)]);
+  const cal = SCHOOL_CALENDAR.getInfo(et.date);
 
-  const row = {
-    date:         et.date,
-    session_time: sessionTime,
-    congestion:   traffic?.congestion   ?? null,
-    current_speed: traffic?.current_speed ?? null,
+  if (!traffic) console.log('No traffic data — storing null values.');
+
+  const snapRow = {
+    date:            et.date,
+    session_time:    sessionTime,
+    congestion:      traffic?.congestion      ?? null,
+    current_speed:   traffic?.current_speed   ?? null,
     free_flow_speed: traffic?.free_flow_speed ?? null,
-    captured_at:  new Date().toISOString(),
+    captured_at:     new Date().toISOString(),
+    weather_temp_f:  weather.temp_f    ?? null,
+    weather_code:    weather.code      ?? null,
+    weather_precip:  weather.precip_mm ?? null,
+    weather_desc:    weather.desc      ?? null,
+    is_school_day:   ['school', 'early_release'].includes(cal.type),
+    school_event:    cal.desc          ?? null,
   };
-
-  const result = await supabase('POST', 'traffic_snapshots', row);
+  const result = await supabase('POST', 'traffic_snapshots', snapRow);
   console.log(result ? `✓ Snapshot saved for ${et.date}` : '✗ Failed to save snapshot');
 }
 
