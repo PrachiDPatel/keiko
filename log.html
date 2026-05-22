@@ -111,7 +111,7 @@ async function init() {
   if (sessionTime) {
     timeEl.textContent = sessionTime;
   } else {
-    timeEl.innerHTML = '<span style="color:var(--amber)">No session scheduled today</span>';
+    timeEl.innerHTML = '<span style="color:var(--sky)">No session scheduled today</span>';
   }
 
   _cal = SCHOOL_CALENDAR.getInfo(today);

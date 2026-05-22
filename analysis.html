@@ -29,7 +29,7 @@
   border-radius: 14px 14px 0 0;
 }
 .hero-card.blue-d::before { background: #2563EB; }
-.hero-card.red::before    { background: var(--red); }
+.hero-card.deep-teal::before { background: var(--deep-teal); }
 .hero-card.sky::before    { background: #0EA5E9; }
 .hero-card.green::before  { background: var(--green); }
 .hero-card.teal::before   { background: #0D9488; }
@@ -37,7 +37,7 @@
 .hero-label  { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: .4rem; }
 .hero-value  { font-size: 1.85rem; font-weight: 800; line-height: 1; }
 .hero-value.blue-d { color: #2563EB; }
-.hero-value.red    { color: var(--red); }
+.hero-value.deep-teal { color: var(--deep-teal); }
 .hero-value.sky    { color: #0EA5E9; }
 .hero-value.green  { color: var(--green); }
 .hero-sub    { font-size: .72rem; color: var(--muted); margin-top: .3rem; }
@@ -150,12 +150,12 @@
 
   <!-- Hero stats -->
   <div class="analysis-hero" id="hero-grid">
-    <div class="hero-card red"><div class="hero-label">Total overstaffing cost</div><div class="hero-value red" id="sum-waste">—</div><div class="hero-sub">cumulative</div></div>
+    <div class="hero-card deep-teal"><div class="hero-label">Total overstaffing cost</div><div class="hero-value deep-teal" id="sum-waste">—</div><div class="hero-sub">cumulative</div></div>
     <div class="hero-card blue-d"><div class="hero-label">Sessions analysed</div><div class="hero-value blue-d" id="sum-sessions">—</div></div>
     <div class="hero-card blue"><div class="hero-label">Avg kids / session</div><div class="hero-value" id="sum-avg-kids" style="color:#3B82F6">—</div></div>
     <div class="hero-card teal"><div class="hero-label">Avg senseis / session</div><div class="hero-value" id="sum-avg-senseis" style="color:#0D9488">—</div></div>
     <div class="hero-card green"><div class="hero-label">Avg interns / session</div><div class="hero-value" id="sum-avg-interns" style="color:var(--green)">—</div></div>
-    <div class="hero-card red"><div class="hero-label">Overstaffed sessions</div><div class="hero-value red" id="sum-over">—</div></div>
+    <div class="hero-card deep-teal"><div class="hero-label">Overstaffed sessions</div><div class="hero-value deep-teal" id="sum-over">—</div></div>
     <div class="hero-card sky"><div class="hero-label">Understaffed sessions</div><div class="hero-value sky" id="sum-under">—</div></div>
   </div>
 
@@ -615,7 +615,7 @@ async function runAnalysis() {
   // Overstaffing rate
   const overRate = stats.total > 0 ? Math.round(100*stats.overstaffed/stats.total) : 0;
   if (overRate > 0) {
-    const clr = overRate > 50 ? 'var(--red)' : overRate > 25 ? 'var(--amber)' : 'var(--green)';
+    const clr = overRate > 50 ? 'var(--deep-teal)' : overRate > 25 ? 'var(--sky)' : 'var(--green)';
     insights.push({ color: clr, text: `<b>${overRate}%</b> of sessions were overstaffed — $${stats.totalWaste.toFixed(0)} total unnecessary cost.` });
   }
 
@@ -627,7 +627,7 @@ async function runAnalysis() {
   let cum = 0;
   const cumData = sessions.map(s => { cum += s.waste; return +cum.toFixed(2); });
   charts.cumulative = mkChart('chart-cumulative', 'line', sessions.map(s=>s.date.slice(5)),
-    [{ label: 'Cumulative $', data: cumData, borderColor: '#EF4444', backgroundColor: 'rgba(239,68,68,.08)', fill: true, tension: .3 }],
+    [{ label: 'Cumulative $', data: cumData, borderColor: '#0D9488', backgroundColor: 'rgba(13,148,136,.08)', fill: true, tension: .3 }],
     { scales: { y: { beginAtZero: true, ticks: { callback: v=>'$'+v } } } }
   );
 
@@ -635,7 +635,7 @@ async function runAnalysis() {
   const dowWaste = Array(7).fill(0);
   sessions.forEach(s => { dowWaste[new Date(s.date+'T12:00:00').getDay()] += s.waste; });
   charts.dowWaste = mkChart('chart-dow-waste', 'bar', scheduledDays.map(d=>DAYS[d]),
-    [{ data: scheduledDays.map(d=>+dowWaste[d].toFixed(2)), backgroundColor: 'rgba(239,68,68,.7)' }],
+    [{ data: scheduledDays.map(d=>+dowWaste[d].toFixed(2)), backgroundColor: 'rgba(13,148,136,.7)' }],
     { scales: { y: { beginAtZero: true, ticks: { callback: v=>'$'+v } } } }
   );
 
@@ -643,8 +643,8 @@ async function runAnalysis() {
   const tbody = document.getElementById('detail-tbody');
   tbody.innerHTML = sessions.map(s => {
     const dow  = new Date(s.date+'T12:00:00').getDay();
-    const status = s.extra > 0  ? `<span class="badge badge-red">+${s.extra} over</span>`
-                 : s.shortage > 0 ? `<span class="badge badge-amber">${s.shortage} short</span>`
+    const status = s.extra > 0  ? `<span class="badge badge-deep-teal">+${s.extra} over</span>`
+                 : s.shortage > 0 ? `<span class="badge badge-sky">${s.shortage} short</span>`
                  : `<span class="badge badge-green">ok</span>`;
     const schoolB = s.is_school_day ? '<span class="badge badge-purple">school</span>' : '<span class="badge badge-green">off</span>';
     const trafficVal = s.traffic_congestion != null ? trafficIcon(s.traffic_congestion) : '—';
@@ -661,7 +661,7 @@ async function runAnalysis() {
       <td style="color:var(--green)">${s.interns_count > 0 ? s.interns_count : '—'}</td>
       <td>${s.needed}</td>
       <td>${s.extra > 0 ? '+'+s.extra : s.extra < 0 ? s.extra : '0'}</td>
-      <td style="color:${s.waste>0?'var(--red)':'var(--green)'}">${s.waste>0?'$'+s.waste.toFixed(2):'—'}</td>
+      <td style="color:${s.waste>0?'var(--deep-teal)':'var(--green)'}">${s.waste>0?'$'+s.waste.toFixed(2):'—'}</td>
       <td>${status}</td>
     </tr>`;
   }).join('');

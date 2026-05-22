@@ -108,7 +108,7 @@ async function init() {
     const ratioEl = document.getElementById('stat-ratio');
     ratioEl.textContent = ratio;
     if (ratio !== '—') {
-      ratioEl.className = 'stat-value ' + (ratio > CONFIG.preferredRatio ? 'red' : 'green');
+      ratioEl.className = 'stat-value ' + (ratio > CONFIG.preferredRatio ? 'deep-teal' : 'green');
     }
   } else {
     const kidsEl = document.getElementById('stat-kids');
@@ -155,8 +155,8 @@ async function init() {
   tbody.innerHTML = sessions.slice(0,15).map(s => {
     const needed  = Math.ceil(s.kids_count / CONFIG.preferredRatio);
     const extra   = s.senseis_count - needed;
-    const status  = extra > 0 ? `<span class="badge badge-red">+${extra} over</span>`
-                  : extra < 0 ? `<span class="badge badge-amber">${-extra} short</span>`
+    const status  = extra > 0 ? `<span class="badge badge-deep-teal">+${extra} over</span>`
+                  : extra < 0 ? `<span class="badge badge-sky">${-extra} short</span>`
                   : `<span class="badge badge-green">perfect</span>`;
     return `<tr>
       <td>${s.date}</td>
