@@ -28,17 +28,17 @@
   height: 3px;
   border-radius: 14px 14px 0 0;
 }
-.hero-card.purple::before { background: #6D28D9; }
+.hero-card.blue-d::before { background: #2563EB; }
 .hero-card.red::before    { background: var(--red); }
-.hero-card.amber::before  { background: var(--amber); }
+.hero-card.sky::before    { background: #0EA5E9; }
 .hero-card.green::before  { background: var(--green); }
-.hero-card.orange::before { background: var(--orange); }
+.hero-card.teal::before   { background: #0D9488; }
 .hero-card.blue::before   { background: #3B82F6; }
 .hero-label  { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: .4rem; }
 .hero-value  { font-size: 1.85rem; font-weight: 800; line-height: 1; }
-.hero-value.purple { color: #6D28D9; }
+.hero-value.blue-d { color: #2563EB; }
 .hero-value.red    { color: var(--red); }
-.hero-value.amber  { color: var(--amber); }
+.hero-value.sky    { color: #0EA5E9; }
 .hero-value.green  { color: var(--green); }
 .hero-sub    { font-size: .72rem; color: var(--muted); margin-top: .3rem; }
 
@@ -84,8 +84,8 @@
 .pred-band .band-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .3rem; }
 .pred-band .band-val   { font-size: 1.4rem; font-weight: 800; }
 .pred-band.low    { background: #DCFCE7; color: #15803D; }
-.pred-band.mid    { background: #FEF9C3; color: #854D0E; }
-.pred-band.high   { background: #EDE9FE; color: #6D28D9; }
+.pred-band.mid    { background: #DBEAFE; color: #1D4ED8; }
+.pred-band.high   { background: #CCFBF1; color: #0F766E; }
 .pred-band.active { outline: 2.5px solid currentColor; }
 .pred-note { font-size: .78rem; color: var(--muted); line-height: 1.5; }
 .pred-factors { display: flex; flex-wrap: wrap; gap: .4rem; }
@@ -96,7 +96,7 @@
 }
 .pred-factor.positive { background: #DCFCE7; color: #15803D; }
 .pred-factor.negative { background: #FEE2E2; color: #DC2626; }
-.pred-factor.neutral  { background: #EDE9FE; color: #7C3AED; }
+.pred-factor.neutral  { background: #DBEAFE; color: #1E40AF; }
 
 /* ── Controls bar tweaks ───────────────────────────────────────────────── */
 .controls-bar { background: var(--card); border-radius: 12px; box-shadow: var(--shadow); padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
@@ -151,12 +151,12 @@
   <!-- Hero stats -->
   <div class="analysis-hero" id="hero-grid">
     <div class="hero-card red"><div class="hero-label">Total overstaffing cost</div><div class="hero-value red" id="sum-waste">—</div><div class="hero-sub">cumulative</div></div>
-    <div class="hero-card purple"><div class="hero-label">Sessions analysed</div><div class="hero-value purple" id="sum-sessions">—</div></div>
+    <div class="hero-card blue-d"><div class="hero-label">Sessions analysed</div><div class="hero-value blue-d" id="sum-sessions">—</div></div>
     <div class="hero-card blue"><div class="hero-label">Avg kids / session</div><div class="hero-value" id="sum-avg-kids" style="color:#3B82F6">—</div></div>
-    <div class="hero-card orange"><div class="hero-label">Avg senseis / session</div><div class="hero-value" id="sum-avg-senseis" style="color:var(--orange)">—</div></div>
+    <div class="hero-card teal"><div class="hero-label">Avg senseis / session</div><div class="hero-value" id="sum-avg-senseis" style="color:#0D9488">—</div></div>
     <div class="hero-card green"><div class="hero-label">Avg interns / session</div><div class="hero-value" id="sum-avg-interns" style="color:var(--green)">—</div></div>
     <div class="hero-card red"><div class="hero-label">Overstaffed sessions</div><div class="hero-value red" id="sum-over">—</div></div>
-    <div class="hero-card amber"><div class="hero-label">Understaffed sessions</div><div class="hero-value amber" id="sum-under">—</div></div>
+    <div class="hero-card sky"><div class="hero-label">Understaffed sessions</div><div class="hero-value sky" id="sum-under">—</div></div>
   </div>
 
   <!-- Prediction -->
@@ -467,7 +467,7 @@ async function runAnalysis() {
   const dowLabels = scheduledDays.map(d => DAYS[d]);
   const dowData   = scheduledDays.map(d => dowCount[d] ? +(dowKids[d]/dowCount[d]).toFixed(1) : 0);
   charts.dowAtt = mkChart('chart-dow-att', 'bar', dowLabels,
-    [{ data: dowData, backgroundColor: ['rgba(108,62,245,.7)','rgba(59,130,246,.7)','rgba(255,107,53,.7)','rgba(34,197,94,.7)'] }],
+    [{ data: dowData, backgroundColor: ['rgba(37,99,235,.7)','rgba(59,130,246,.7)','rgba(13,148,136,.7)','rgba(52,211,153,.7)'] }],
     { scales: { y: { beginAtZero: true, title: { display: true, text: 'Avg kids' } } } }
   );
 
@@ -477,7 +477,7 @@ async function runAnalysis() {
   const avgSchool   = school.length   ? school.reduce((a,s)=>a+s.kids_count,0)/school.length   : 0;
   const avgNoSchool = noSchool.length ? noSchool.reduce((a,s)=>a+s.kids_count,0)/noSchool.length : 0;
   charts.school = mkChart('chart-school', 'bar', ['School day', 'No school'],
-    [{ data: [+avgSchool.toFixed(1), +avgNoSchool.toFixed(1)], backgroundColor: ['rgba(108,62,245,.7)', 'rgba(34,197,94,.7)'] }],
+    [{ data: [+avgSchool.toFixed(1), +avgNoSchool.toFixed(1)], backgroundColor: ['rgba(37,99,235,.7)', 'rgba(52,211,153,.7)'] }],
     { scales: { y: { beginAtZero: true, title: { display: true, text: 'Avg kids' } } } }
   );
 
@@ -493,15 +493,15 @@ async function runAnalysis() {
   const mData   = mLabels.map(m => +(monthMap[m].kids/monthMap[m].n).toFixed(1));
   const mDisplay = mLabels.map(m => { const [,mo] = m.split('-'); return MONTH_NAMES[+mo-1]; });
   charts.month = mkChart('chart-month', 'bar', mDisplay,
-    [{ data: mData, backgroundColor: 'rgba(255,107,53,.7)' }],
+    [{ data: mData, backgroundColor: 'rgba(13,148,136,.7)' }],
     { scales: { y: { beginAtZero: true, title: { display: true, text: 'Avg kids' } } } }
   );
 
   // ── Trend ─────────────────────────────────────────────────────────────────
   charts.trend = mkChart('chart-trend', 'line', sessions.map(s=>s.date.slice(5)),
     [
-      { label: 'Kids', data: sessions.map(s=>s.kids_count), borderColor: '#6C3EF5', backgroundColor: 'rgba(108,62,245,.08)', tension: .35, fill: true },
-      { label: 'Senseis', data: sessions.map(s=>s.senseis_count), borderColor: '#FF6B35', backgroundColor: 'rgba(255,107,53,.08)', tension: .35, fill: false },
+      { label: 'Kids', data: sessions.map(s=>s.kids_count), borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,.08)', tension: .35, fill: true },
+      { label: 'Senseis', data: sessions.map(s=>s.senseis_count), borderColor: '#0D9488', backgroundColor: 'rgba(13,148,136,.08)', tension: .35, fill: false },
       { label: 'Interns', data: sessions.map(s=>s.interns_count), borderColor: '#22C55E', backgroundColor: 'rgba(34,197,94,.08)', tension: .35, fill: false, borderDash: [4,3] },
     ],
     { plugins: { legend: { display: true, position: 'bottom' } } }
@@ -535,7 +535,7 @@ async function runAnalysis() {
       null,
       [{
         data: tPairs.map(s=>({ x: +s.traffic_congestion.toFixed(2), y: s.kids_count })),
-        backgroundColor: 'rgba(108,62,245,.55)',
+        backgroundColor: 'rgba(37,99,235,.55)',
         pointRadius: 5,
       }],
       {
@@ -562,7 +562,7 @@ async function runAnalysis() {
       null,
       [{
         data: tempPairs.map(s=>({ x: +s.weather_temp_f, y: s.kids_count })),
-        backgroundColor: 'rgba(255,107,53,.55)',
+        backgroundColor: 'rgba(13,148,136,.55)',
         pointRadius: 5,
       }],
       {
@@ -593,14 +593,14 @@ async function runAnalysis() {
     if (avg > bestAvg) { bestAvg = avg; bestDay = d; }
   });
   if (bestDay !== null && dowCount[bestDay] >= 2) {
-    insights.push({ color: 'var(--purple)', text: `<b>${DAYS[bestDay]}</b> is your busiest day — avg ${bestAvg.toFixed(1)} kids.` });
+    insights.push({ color: '#2563EB', text: `<b>${DAYS[bestDay]}</b> is your busiest day — avg ${bestAvg.toFixed(1)} kids.` });
   }
 
   // School vs no-school gap
   if (school.length >= 2 && noSchool.length >= 2) {
     const diff = avgSchool - avgNoSchool;
     const sign = diff > 0 ? '+' : '';
-    insights.push({ color: diff > 0 ? 'var(--purple)' : 'var(--green)', text: `School days average <b>${sign}${diff.toFixed(1)} kids</b> vs. non-school days.` });
+    insights.push({ color: diff > 0 ? '#2563EB' : 'var(--green)', text: `School days average <b>${sign}${diff.toFixed(1)} kids</b> vs. non-school days.` });
   }
 
   // Traffic correlation
@@ -608,7 +608,7 @@ async function runAnalysis() {
     const r = pearson(tPairs.map(s=>s.traffic_congestion), tPairs.map(s=>s.kids_count));
     if (r !== null && Math.abs(r) >= 0.2) {
       const dir = r > 0 ? 'more' : 'fewer';
-      insights.push({ color: 'var(--orange)', text: `Traffic and attendance are <b>${r > .4 || r < -.4 ? 'strongly' : 'mildly'} correlated</b> (r=${r}) — higher congestion → ${dir} kids.` });
+      insights.push({ color: '#0D9488', text: `Traffic and attendance are <b>${r > .4 || r < -.4 ? 'strongly' : 'mildly'} correlated</b> (r=${r}) — higher congestion → ${dir} kids.` });
     }
   }
 

@@ -130,8 +130,8 @@ async function init() {
     data: {
       labels,
       datasets: [
-        { label: 'Kids',    data: kids,    backgroundColor: 'rgba(108,62,245,.65)' },
-        { label: 'Senseis', data: senseis, backgroundColor: 'rgba(255,107,53,.65)' },
+        { label: 'Kids',    data: kids,    backgroundColor: 'rgba(37,99,235,.65)' },
+        { label: 'Senseis', data: senseis, backgroundColor: 'rgba(13,148,136,.65)' },
       ]
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
@@ -142,7 +142,7 @@ async function init() {
     data: {
       labels,
       datasets: [
-        { label: 'Actual ratio', data: ratios, borderColor: '#6C3EF5', backgroundColor: 'rgba(108,62,245,.1)', tension: .3, fill: true },
+        { label: 'Actual ratio', data: ratios, borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,.1)', tension: .3, fill: true },
         { label: `Preferred (1:${CONFIG.preferredRatio})`, data: last30.map(()=>CONFIG.preferredRatio), borderColor: '#22C55E', borderDash: [5,5], pointRadius: 0 },
       ]
     },
